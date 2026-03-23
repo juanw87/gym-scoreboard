@@ -4,17 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web": "next dev",
-    "dev:api": "tsx watch server/src/index.ts",
+    "dev:web": "next dev ./frontend",
+    "dev:api": "tsx watch backend/src/index.ts",
     "build": "npm run build:web && npm run build:api",
-    "build:web": "next build",
-    "build:api": "tsc -p server/tsconfig.json",
+    "build:web": "next build ./frontend",
+    "build:api": "tsc -p backend/tsconfig.json",
     "start": "concurrently \"npm run start:api\" \"npm run start:web\"",
-    "start:web": "next start",
-    "start:api": "node server/dist/index.js",
-    "db:migrate": "tsx server/src/scripts/migrate.ts",
-    "db:seed": "tsx server/src/scripts/seed.ts",
-    "lint": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit"
+    "start:web": "next start ./frontend",
+    "start:api": "node backend/dist/index.js",
+    "db:migrate": "tsx backend/src/scripts/migrate.ts",
+    "db:seed": "tsx backend/src/scripts/seed.ts",
+    "lint": "tsc -p frontend/tsconfig.json --noEmit && tsc -p backend/tsconfig.json --noEmit"
   },
   "dependencies": {
     "cors": "^2.8.5",

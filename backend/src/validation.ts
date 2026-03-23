@@ -18,3 +18,5 @@ export const createWorkoutSchema = z.object({
     )
     .min(1)
 });
+
+export type CreateWorkoutInput = z.infer<typeof createWorkoutSchema>;

@@ -18,11 +18,14 @@ MVP full-stack para boxes de crossfit y entrenamiento funcional. El proyecto usa
 
 ## Estructura
 
-- `app/page.tsx`: dashboard principal
-- `app/athletes/[id]/page.tsx`: perfil del atleta
-- `server/src/index.ts`: API Express
-- `server/sql/schema.sql`: esquema PostgreSQL
-- `server/sql/seed.sql`: datos de ejemplo
+- `frontend/app/page.tsx`: dashboard principal
+- `frontend/app/athletes/[id]/page.tsx`: perfil del atleta
+- `backend/src/index.ts`: API Express
+- `backend/src/controllers`: capa de presentacion HTTP
+- `backend/src/services`: logica de negocio
+- `backend/src/repositories`: acceso a PostgreSQL
+- `backend/sql/schema.sql`: esquema PostgreSQL
+- `backend/sql/seed.sql`: datos de ejemplo
 
 ## Variables de entorno
 

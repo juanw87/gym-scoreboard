@@ -1,8 +1,9 @@
 node_modules
 .next
+frontend/.next
 out
 *.log
 .env
 .env.local
-server/dist
+backend/dist
 tsconfig.tsbuildinfo
