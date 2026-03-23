@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: gym-scoreboard-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gym_scoreboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
