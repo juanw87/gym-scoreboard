@@ -23,16 +23,26 @@ export async function findAthleteAccountByEmail(email: string) {
 
 export async function insertAthleteAccount(input: {
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   passwordHash: string;
 }) {
   const result = await query<AthleteAuthRecord>(
     `
-      INSERT INTO athletes (name, email, password_hash, level, favorite_format)
-      VALUES ($1, $2, $3, 'Atleta', 'General')
+      INSERT INTO athletes (
+        name,
+        first_name,
+        last_name,
+        email,
+        password_hash,
+        level,
+        favorite_format
+      )
+      VALUES ($1, $2, $3, $4, $5, 'Atleta', 'General')
       RETURNING id, name, email, password_hash
     `,
-    [input.name, input.email, input.passwordHash]
+    [input.name, input.firstName, input.lastName, input.email, input.passwordHash]
   );
 
   return result.rows[0];

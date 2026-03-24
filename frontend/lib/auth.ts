@@ -32,3 +32,9 @@ export function storeSession(session: AuthSession) {
 export function clearStoredSession() {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
 }
+
+export function buildAuthHeaders(session: AuthSession) {
+  return {
+    "x-athlete-id": String(session.athleteId)
+  };
+}

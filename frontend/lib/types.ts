@@ -104,3 +104,21 @@ export type AthleteDetailResponse = {
   }[];
   insights: string[];
 };
+
+export type AthleteProfileResponse = {
+  athleteId: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  age: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+};
+
+export type AthleteProfileForm = {
+  firstName: string;
+  lastName: string;
+  age: string;
+  heightCm: string;
+  weightKg: string;
+};

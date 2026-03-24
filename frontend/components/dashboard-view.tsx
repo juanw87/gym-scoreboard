@@ -194,13 +194,55 @@ export function DashboardView({
         <div>
           <p className="eyebrow">Gym Scoreboard MVP</p>
           <h1>{mainTitle}</h1>
+          <p className="header-copy">{mainDescription}</p>
         </div>
         <div className="header-actions">
-          <p className="header-copy">{mainDescription}</p>
+          
           <div className="session-badge">
             <span>{currentUser.name}</span>
-            <button className="ghost-button" onClick={onLogout} type="button">
-              Cerrar sesión
+            <Link
+              aria-label="Mi perfil"
+              className="ghost-button link-button icon-button"
+              href="/profile"
+              title="Mi perfil"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+                width="18"
+              >
+                <path d="M19 21a7 7 0 0 0-14 0" />
+                <circle cx="12" cy="8" r="4" />
+              </svg>
+            </Link>
+            <button
+              aria-label="Cerrar sesion"
+              className="ghost-button icon-button"
+              onClick={onLogout}
+              title="Cerrar sesion"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+                width="18"
+              >
+                <path d="M10 17l5-5-5-5" />
+                <path d="M15 12H3" />
+                <path d="M20 4v16" />
+              </svg>
             </button>
           </div>
         </div>

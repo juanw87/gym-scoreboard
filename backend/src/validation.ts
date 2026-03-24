@@ -39,6 +39,34 @@ export const registerSchema = z
     path: ["confirmPassword"]
   });
 
+export const athleteProfileSchema = z.object({
+  firstName: normalizedString.min(2, "Ingresa tu nombre."),
+  lastName: normalizedString.min(2, "Ingresa tu apellido."),
+  age: z
+    .number({
+      error: "Ingresa una edad válida."
+    })
+    .int("Ingresa una edad válida.")
+    .positive("Ingresa una edad válida.")
+    .max(120, "Ingresa una edad válida.")
+    .nullable(),
+  heightCm: z
+    .number({
+      error: "Ingresa una estatura válida."
+    })
+    .positive("Ingresa una estatura válida.")
+    .max(300, "Ingresa una estatura válida.")
+    .nullable(),
+  weightKg: z
+    .number({
+      error: "Ingresa un peso válido."
+    })
+    .positive("Ingresa un peso válido.")
+    .max(500, "Ingresa un peso válido.")
+    .nullable()
+});
+
 export type CreateWorkoutInput = z.infer<typeof createWorkoutSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type AthleteProfileInput = z.infer<typeof athleteProfileSchema>;

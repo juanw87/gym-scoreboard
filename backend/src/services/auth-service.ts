@@ -46,6 +46,8 @@ export async function registerAthlete(input: RegisterInput) {
   const passwordHash = await hashPassword(input.password);
   const athlete = await insertAthleteAccount({
     name: buildFullName(input.firstName, input.lastName),
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
     email,
     passwordHash
   });
