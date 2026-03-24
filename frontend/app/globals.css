@@ -177,8 +177,10 @@ button {
 }
 
 .auth-form {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  align-content: start;
+  min-height: 0;   /* 🔥 clave para evitar overflow en flex */
   min-width: 0;
   gap: 14px;
 }
