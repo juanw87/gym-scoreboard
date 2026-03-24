@@ -1,5 +1,5 @@
-import { DashboardView } from "@/components/dashboard-view";
+import { AuthPage } from "@/components/auth-page";
 
 export default function HomePage() {
-  return <DashboardView />;
+  return <AuthPage />;
 }

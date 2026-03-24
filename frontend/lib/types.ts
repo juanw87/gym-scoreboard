@@ -5,6 +5,25 @@ export type AthleteSummary = {
   favoriteFormat: string;
 };
 
+export type AuthResponse = {
+  athleteId: number;
+  name: string;
+  email: string;
+};
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
+export type RegisterPayload = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export type DashboardResponse = {
   featuredWorkout: {
     id: number;

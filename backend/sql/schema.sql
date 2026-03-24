@@ -1,10 +1,20 @@
 CREATE TABLE IF NOT EXISTS athletes (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  level TEXT NOT NULL,
-  favorite_format TEXT NOT NULL,
+  level TEXT NOT NULL DEFAULT 'Atleta',
+  favorite_format TEXT NOT NULL DEFAULT 'General',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE athletes
+  ADD COLUMN IF NOT EXISTS email TEXT,
+  ADD COLUMN IF NOT EXISTS password_hash TEXT;
+
+ALTER TABLE athletes
+  ALTER COLUMN level SET DEFAULT 'Atleta';
+
+ALTER TABLE athletes
+  ALTER COLUMN favorite_format SET DEFAULT 'General';
 
 CREATE TABLE IF NOT EXISTS workouts (
   id SERIAL PRIMARY KEY,
@@ -32,3 +42,6 @@ CREATE TABLE IF NOT EXISTS scores (
 CREATE INDEX IF NOT EXISTS idx_scores_workout_id ON scores(workout_id);
 CREATE INDEX IF NOT EXISTS idx_scores_athlete_id ON scores(athlete_id);
 CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(workout_date DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_athletes_email_unique
+  ON athletes ((LOWER(email)))
+  WHERE email IS NOT NULL;

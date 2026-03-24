@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import type { AuthSession } from "@/lib/auth";
 import type {
   AthleteSummary,
   DashboardResponse,
@@ -47,7 +48,13 @@ const navigationItems = [
 
 type DashboardSection = (typeof navigationItems)[number]["id"];
 
-export function DashboardView() {
+export function DashboardView({
+  currentUser,
+  onLogout
+}: {
+  currentUser: AuthSession;
+  onLogout: () => void;
+}) {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [athletes, setAthletes] = useState<AthleteSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,7 +195,15 @@ export function DashboardView() {
           <p className="eyebrow">Gym Scoreboard MVP</p>
           <h1>{mainTitle}</h1>
         </div>
-        <p className="header-copy">{mainDescription}</p>
+        <div className="header-actions">
+          <p className="header-copy">{mainDescription}</p>
+          <div className="session-badge">
+            <span>{currentUser.name}</span>
+            <button className="ghost-button" onClick={onLogout} type="button">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
       </header>
 
       <section className="dashboard-layout">

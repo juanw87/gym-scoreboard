@@ -81,6 +81,122 @@ button {
   font-size: 1.05rem;
 }
 
+.header-actions {
+  display: grid;
+  gap: 14px;
+  justify-items: end;
+}
+
+.session-badge {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.session-badge span {
+  color: var(--brand);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.auth-shell {
+  display: grid;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 24px;
+}
+
+.auth-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.auth-copy,
+.auth-panel {
+  border-radius: 30px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.auth-copy {
+  padding: 40px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 10, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(28, 28, 28, 0.98), rgba(10, 10, 10, 0.98));
+}
+
+.auth-copy h1 {
+  margin: 12px 0 18px;
+  font-size: clamp(3rem, 8vw, 5.4rem);
+  line-height: 0.9;
+  font-family: var(--font-title);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  max-width: 10ch;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 10, 0.14), rgba(255, 214, 10, 0.04)),
+    rgba(17, 17, 17, 0.96);
+}
+
+.auth-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.auth-toggle-button {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.auth-toggle-button.is-active {
+  background: var(--brand);
+  color: #000000;
+  box-shadow: 0 0 28px rgba(255, 214, 10, 0.18);
+}
+
+.auth-form {
+  flex: 1;
+  align-content: start;
+  min-width: 0;
+  gap: 14px;
+}
+
+.auth-form .form-actions {
+  margin-top: 4px;
+  padding-top: 0;
+}
+
+.auth-form h2 {
+  margin: 8px 0 0;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-family: var(--font-title);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.92;
+}
+
 .status-card {
   display: grid;
   gap: 16px;
@@ -547,7 +663,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .success-message {
@@ -608,12 +724,17 @@ strong,
   .stats-grid,
   .content-grid,
   .athlete-grid,
-  .field-grid {
+  .field-grid,
+  .auth-hero {
     grid-template-columns: 1fr;
   }
 
   .top-header {
     align-items: flex-start;
+  }
+
+  .header-actions {
+    justify-items: start;
   }
 
   .dashboard-layout {
@@ -641,7 +762,9 @@ strong,
 
   .hero-panel,
   .side-nav,
-  .panel {
+  .panel,
+  .auth-copy,
+  .auth-panel {
     padding: 20px;
   }
 

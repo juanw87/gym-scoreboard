@@ -38,7 +38,7 @@ export function AthleteDetailView({ athleteId }: { athleteId: string }) {
     return (
       <main className="page-shell status-card">
         <p>{error ?? "Atleta no encontrado."}</p>
-        <Link className="ghost-button link-button" href="/">
+        <Link className="ghost-button link-button" href="/dashboard">
           Volver al dashboard
         </Link>
       </main>
@@ -47,7 +47,7 @@ export function AthleteDetailView({ athleteId }: { athleteId: string }) {
 
   return (
     <main className="page-shell athlete-page">
-      <Link className="back-link" href="/">
+      <Link className="back-link" href="/dashboard">
         Volver al dashboard
       </Link>
 

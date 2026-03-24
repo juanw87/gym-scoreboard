@@ -2,6 +2,7 @@ import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { env } from "./config";
+import { HttpError } from "./errors";
 import { router } from "./routes";
 
 const app = express();
@@ -20,6 +21,11 @@ app.use((error: unknown, _request: Request, response: Response, _next: NextFunct
     response.status(400).json({
       error: error.issues[0]?.message ?? "Invalid request payload."
     });
+    return;
+  }
+
+  if (error instanceof HttpError) {
+    response.status(error.statusCode).json({ error: error.message });
     return;
   }
 
