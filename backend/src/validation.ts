@@ -5,7 +5,7 @@ const normalizedString = z.string().trim();
 export const createWorkoutSchema = z.object({
   title: normalizedString.min(2),
   workoutDate: z.string().date(),
-  workoutType: z.enum(["for_time", "amrap", "weight"]),
+  workoutType: z.enum(["for_time", "amrap", "emon","tabata"]),
   rankingOrder: z.enum(["asc", "desc"]),
   description: normalizedString.min(4),
   sourceImageUrl: normalizedString.url().optional().or(z.literal("")),
@@ -18,7 +18,13 @@ export const createWorkoutSchema = z.object({
         note: normalizedString.optional()
       })
     )
-    .min(1)
+    .default([])
+});
+
+export const submitWorkoutScoreSchema = z.object({
+  scoreDisplay: normalizedString.min(1),
+  scoreValue: z.number(),
+  note: normalizedString.optional()
 });
 
 export const loginSchema = z.object({
@@ -67,6 +73,7 @@ export const athleteProfileSchema = z.object({
 });
 
 export type CreateWorkoutInput = z.infer<typeof createWorkoutSchema>;
+export type SubmitWorkoutScoreInput = z.infer<typeof submitWorkoutScoreSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type AthleteProfileInput = z.infer<typeof athleteProfileSchema>;

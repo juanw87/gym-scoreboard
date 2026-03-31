@@ -7,7 +7,10 @@ import {
 } from "./controllers/dashboard-controller";
 import { getHealth } from "./controllers/health-controller";
 import { getProfileController, updateProfileController } from "./controllers/profile-controller";
-import { createWorkoutController } from "./controllers/workout-controller";
+import {
+  createWorkoutController,
+  submitWorkoutScoreController
+} from "./controllers/workout-controller";
 
 export const router = Router();
 
@@ -20,3 +23,4 @@ router.put("/profile/:athleteId", updateProfileController);
 router.get("/athletes", getAthletesController);
 router.get("/athletes/:id", getAthleteDetailController);
 router.post("/workouts", createWorkoutController);
+router.post("/workouts/:workoutId/scores", submitWorkoutScoreController);

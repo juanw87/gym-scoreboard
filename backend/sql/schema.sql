@@ -25,12 +25,27 @@ CREATE TABLE IF NOT EXISTS workouts (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   workout_date DATE NOT NULL,
-  workout_type TEXT NOT NULL CHECK (workout_type IN ('for_time', 'amrap', 'weight')),
+  workout_type TEXT NOT NULL CHECK (workout_type IN ('for_time', 'amrap', 'weight', 'emon', 'tabata')),
   ranking_order TEXT NOT NULL CHECK (ranking_order IN ('asc', 'desc')),
   description TEXT NOT NULL,
   source_image_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'workouts_workout_type_check'
+  ) THEN
+    ALTER TABLE workouts DROP CONSTRAINT workouts_workout_type_check;
+  END IF;
+END $$;
+
+ALTER TABLE workouts
+  ADD CONSTRAINT workouts_workout_type_check
+  CHECK (workout_type IN ('for_time', 'amrap', 'weight', 'emon', 'tabata'));
 
 CREATE TABLE IF NOT EXISTS scores (
   id SERIAL PRIMARY KEY,

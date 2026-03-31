@@ -72,12 +72,18 @@ export type NewWorkoutPayload = {
   rankingOrder: string;
   description: string;
   sourceImageUrl?: string;
-  scores: {
+  scores?: {
     athleteId: number;
     scoreDisplay: string;
     scoreValue: number;
     note?: string;
   }[];
+};
+
+export type SubmitWorkoutScorePayload = {
+  scoreDisplay: string;
+  scoreValue: number;
+  note?: string;
 };
 
 export type AthleteDetailResponse = {

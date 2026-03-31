@@ -4,6 +4,10 @@ export function labelWorkoutType(workoutType: string) {
       return "For time";
     case "amrap":
       return "AMRAP";
+    case "emon":
+      return "EMON";
+    case "tabata":
+      return "Tabata";
     case "weight":
       return "Weightlifting";
     default:

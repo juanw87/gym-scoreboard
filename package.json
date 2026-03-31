@@ -3,18 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare:web": "cmd /c attrib +P -U frontend /S /D",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web": "next dev ./frontend",
+    "dev:web": "npm run clean:web && npm run prepare:web && next dev ./frontend",
     "dev:api": "tsx watch backend/src/index.ts",
     "build": "npm run build:web && npm run build:api",
-    "build:web": "next build ./frontend",
+    "clean:web": "node -e \"require('node:fs').rmSync('frontend/.next', { recursive: true, force: true })\"",
+    "build:web": "npm run clean:web && npm run prepare:web && next build ./frontend",
     "build:api": "tsc -p backend/tsconfig.json",
     "start": "concurrently \"npm run start:api\" \"npm run start:web\"",
     "start:web": "next start ./frontend",
     "start:api": "node backend/dist/index.js",
     "db:migrate": "tsx backend/src/scripts/migrate.ts",
     "db:seed": "tsx backend/src/scripts/seed.ts",
-    "lint": "tsc -p frontend/tsconfig.json --noEmit && tsc -p backend/tsconfig.json --noEmit"
+    "lint": "tsc -p frontend/tsconfig.json --noEmit --incremental false && tsc -p backend/tsconfig.json --noEmit --incremental false"
   },
   "dependencies": {
     "cors": "^2.8.5",
