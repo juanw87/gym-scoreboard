@@ -52,6 +52,65 @@ function labelWorkoutType(type: WorkoutBlockType) {
   }
 }
 
+function deriveWorkoutType(blocks: WorkoutBlockForm[]) {
+  const availableTypes = blocks
+    .map((block) => block.type)
+    .filter((type, index, current) => current.indexOf(type) === index);
+
+  if (availableTypes.length === 0) {
+    return "Sin definir";
+  }
+
+  if (availableTypes.length === 1) {
+    return labelWorkoutType(availableTypes[0]);
+  }
+
+  return "Mixto";
+}
+
+function formatPreviewDate(workoutDate: string) {
+  if (!workoutDate) {
+    return "Fecha pendiente";
+  }
+
+  const [year, month, day] = workoutDate.split("-");
+
+  if (!year || !month || !day) {
+    return workoutDate;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
+function buildBlockProperties(block: WorkoutBlockForm) {
+  const properties = [
+    `${labelWorkoutType(block.type)}`,
+    block.rounds ? `${block.rounds} ronda${block.rounds === "1" ? "" : "s"}` : null,
+    block.timeCap ? `TC ${block.timeCap}` : null
+  ];
+
+  return properties.filter(Boolean).join(" • ");
+}
+
+function buildExerciseProperties(exercise: WorkoutExerciseForm) {
+  const target =
+    exercise.targetType === "reps"
+      ? exercise.reps
+        ? `${exercise.reps} reps`
+        : null
+      : exercise.timeCap
+        ? `TC ${exercise.timeCap}`
+        : null;
+
+  const loads = [
+    exercise.weightMen ? `H ${exercise.weightMen}` : null,
+    exercise.weightWomen ? `M ${exercise.weightWomen}` : null,
+    exercise.percentRm ? `%RM ${exercise.percentRm}` : null
+  ];
+
+  return [target, ...loads].filter(Boolean).join(" • ");
+}
+
 function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): WorkoutExerciseForm {
   return {
     name: "",
@@ -357,6 +416,7 @@ export function DashboardView({
       : activeSection === "ranking"
         ? "Revisa el leaderboard actual y entra al detalle individual de cada atleta."
         : "Publica el WOD del dia con bloques y ejercicios para que cada atleta cargue su propio score por separado.";
+  const previewWorkoutType = deriveWorkoutType(workoutForm.blocks);
 
   return (
     <main className="page-shell">
@@ -619,6 +679,7 @@ export function DashboardView({
 
           {activeSection === "submit" ? (
             <section className="content-grid submit-grid">
+              <div className="workout-builder-layout">
               <article className="panel">
                 <div className="panel-heading">
                   <div>
@@ -921,6 +982,59 @@ export function DashboardView({
                   </div>
                 </form>
               </article>
+              
+              <aside className="panel workout-preview-panel">
+                <div className="panel-heading">
+                  <div>
+                    <p className="eyebrow">Vista previa</p>
+                    <h2>WOD en vivo</h2>
+                  </div>
+                  <span className="panel-caption">Se actualiza al cargar bloques y ejercicios</span>
+                </div>
+
+                <div className="workout-preview-shell">
+                  <div className="workout-preview-header">
+                    <span className="card-label">{previewWorkoutType}</span>
+                    <strong>{formatPreviewDate(workoutForm.workoutDate)}</strong>
+                  </div>
+
+                  <div className="workout-preview-list">
+                    {workoutForm.blocks.map((block, blockIndex) => (
+                      <section className="preview-block-card" key={`preview-block-${blockIndex}`}>
+                        <div className="preview-block-heading">
+                          <div>
+                            <span className="card-label">Bloque {blockIndex + 1}</span>
+                            <strong>{block.name || `Bloque ${blockIndex + 1}`}</strong>
+                          </div>
+                          <span className="preview-block-properties">
+                            {buildBlockProperties(block) || "Completa las propiedades del bloque"}
+                          </span>
+                        </div>
+
+                        <div className="preview-exercise-list">
+                          {block.exercises.map((exercise, exerciseIndex) => (
+                            <div
+                              className="preview-exercise-row"
+                              key={`preview-exercise-${blockIndex}-${exerciseIndex}`}
+                            >
+                              <div>
+                                <span className="preview-exercise-index">
+                                  Ejercicio {exerciseIndex + 1}
+                                </span>
+                                <strong>{exercise.name || "Ejercicio pendiente"}</strong>
+                              </div>
+                              <span className="preview-exercise-properties">
+                                {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+              </div>
 
               <article className="panel">
                 <div className="panel-heading">

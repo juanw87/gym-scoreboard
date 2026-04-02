@@ -487,6 +487,12 @@ button {
   grid-template-columns: 1fr;
 }
 
+.workout-builder-layout {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+}
+
 .panel {
   padding: 28px;
   border-radius: 26px;
@@ -606,6 +612,84 @@ button {
 .workout-form {
   display: grid;
   gap: 22px;
+}
+
+.workout-preview-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.workout-preview-shell,
+.workout-preview-list,
+.preview-exercise-list {
+  display: grid;
+  gap: 18px;
+}
+
+.workout-preview-header {
+  padding-bottom: 4px;
+}
+
+.workout-preview-header strong,
+.preview-block-heading strong,
+.preview-exercise-row strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workout-preview-header strong {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.preview-block-card {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-block-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.preview-block-heading {
+  display: grid;
+  gap: 10px;
+}
+
+.preview-block-properties,
+.preview-exercise-index,
+.preview-exercise-properties {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.preview-exercise-list {
+  margin-top: 16px;
+}
+
+.preview-exercise-row {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-exercise-row:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.preview-exercise-index {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .field-grid {
@@ -832,6 +916,7 @@ strong,
   .hero-panel,
   .stats-grid,
   .content-grid,
+  .workout-builder-layout,
   .athlete-grid,
   .field-grid,
   .auth-hero {
@@ -864,6 +949,10 @@ strong,
 
   .field-span-2 {
     grid-column: auto;
+  }
+
+  .workout-preview-panel {
+    position: static;
   }
 }
 
