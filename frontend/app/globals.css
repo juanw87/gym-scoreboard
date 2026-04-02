@@ -411,6 +411,7 @@ button {
   line-height: 1.6;
   overflow-wrap: anywhere;
   word-break: break-word;
+  white-space: pre-line;
 }
 
 .metric-grid,
@@ -483,6 +484,7 @@ button {
 
 .submit-grid {
   align-items: start;
+  grid-template-columns: 1fr;
 }
 
 .panel {
@@ -603,7 +605,7 @@ button {
 
 .workout-form {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .field-grid {
@@ -621,6 +623,72 @@ button {
   text-transform: uppercase;
   font-family: var(--font-title);
   letter-spacing: 0.02em;
+}
+
+.form-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.form-section-header.compact {
+  margin-bottom: 0;
+}
+
+.form-section-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.blocks-list,
+.exercise-list {
+  display: grid;
+  gap: 18px;
+}
+
+.workout-block-card,
+.workout-exercise-card {
+  display: grid;
+  gap: 14px;
+}
+
+.workout-block-card {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.workout-block-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.workout-exercise-card {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workout-exercise-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.workout-exercise-card .form-section-header {
+  align-items: baseline;
+}
+
+.workout-exercise-card .ghost-button,
+.workout-block-card .ghost-button {
+  padding: 10px 14px;
+}
+
+.workout-form .card-label {
+  display: inline-block;
+}
+
+.field-span-2 {
+  grid-column: span 2;
 }
 
 .workout-form input,
@@ -725,6 +793,7 @@ button {
 
 .history-row p {
   margin: 4px 0 0;
+  white-space: pre-line;
 }
 
 .history-meta {
@@ -792,6 +861,10 @@ strong,
   .score-row {
     grid-template-columns: 1fr;
   }
+
+  .field-span-2 {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 720px) {
@@ -825,6 +898,10 @@ strong,
   .leaderboard-meta,
   .history-meta {
     text-align: left;
+  }
+
+  .form-section-header {
+    flex-direction: column;
   }
 }
 

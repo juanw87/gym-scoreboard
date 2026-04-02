@@ -13,6 +13,52 @@ import {
 } from "../repositories/workout-repository";
 import { CreateWorkoutInput, SubmitWorkoutScoreInput } from "../validation";
 
+function deriveWorkoutType(blocks: CreateWorkoutInput["blocks"]) {
+  const [firstBlock] = blocks;
+
+  if (blocks.every((block) => block.type === firstBlock.type)) {
+    return firstBlock.type;
+  }
+
+  return "for_time";
+}
+
+function deriveRankingOrder(blocks: CreateWorkoutInput["blocks"]): "asc" | "desc" {
+  return blocks.every((block) => block.type === "amrap") ? "desc" : "asc";
+}
+
+function buildWorkoutTitle(input: CreateWorkoutInput) {
+  const title = input.blocks.map((block) => block.name).join(" / ").trim();
+  return title || `WOD ${input.workoutDate}`;
+}
+
+function buildWorkoutDescription(blocks: CreateWorkoutInput["blocks"]) {
+  return blocks
+    .map((block, blockIndex) => {
+      const exercises = block.exercises
+        .map((exercise) => {
+          const target =
+            exercise.targetType === "reps"
+              ? `${exercise.reps} reps`
+              : `time cap ${exercise.timeCap}`;
+
+          const loads = [
+            exercise.weightMen ? `H ${exercise.weightMen}` : null,
+            exercise.weightWomen ? `M ${exercise.weightWomen}` : null,
+            exercise.percentRm ? `%RM ${exercise.percentRm}` : null
+          ]
+            .filter(Boolean)
+            .join(" | ");
+
+          return loads ? `${exercise.name} (${target}; ${loads})` : `${exercise.name} (${target})`;
+        })
+        .join(", ");
+
+      return `Bloque ${blockIndex + 1}: ${block.name} | ${block.type.toUpperCase()} | ${block.rounds} rondas | TC ${block.timeCap} | ${exercises}`;
+    })
+    .join("\n");
+}
+
 async function recalculateWorkoutRanking(
   client: PoolClient,
   input: {
@@ -56,7 +102,17 @@ async function recalculateWorkoutRanking(
 
 export async function createWorkout(input: CreateWorkoutInput) {
   return withTransaction(async (client) => {
-    const workoutId = await insertWorkout(client, input);
+    const workoutType = deriveWorkoutType(input.blocks);
+    const rankingOrder = deriveRankingOrder(input.blocks);
+    const title = buildWorkoutTitle(input);
+    const description = buildWorkoutDescription(input.blocks);
+    const workoutId = await insertWorkout(client, {
+      title,
+      workoutDate: input.workoutDate,
+      workoutType,
+      rankingOrder,
+      description
+    });
 
     for (const score of input.scores) {
       await insertScore(client, {
@@ -72,14 +128,14 @@ export async function createWorkout(input: CreateWorkoutInput) {
 
     const scoreCount = await recalculateWorkoutRanking(client, {
       workoutId,
-      workoutType: input.workoutType,
-      rankingOrder: input.rankingOrder
+      workoutType,
+      rankingOrder
     });
 
     return {
       workoutId,
-      title: input.title,
-      workoutType: input.workoutType,
+      title,
+      workoutType,
       scoreCount
     };
   });

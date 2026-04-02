@@ -65,13 +65,31 @@ export type ScoreInput = {
   note: string;
 };
 
+export type WorkoutBlockType = "for_time" | "amrap" | "emon" | "tabata";
+
+export type WorkoutExerciseTargetType = "reps" | "time_cap";
+
+export type NewWorkoutExercisePayload = {
+  name: string;
+  targetType: WorkoutExerciseTargetType;
+  reps?: number;
+  timeCap?: string;
+  weightMen?: string;
+  weightWomen?: string;
+  percentRm?: string;
+};
+
+export type NewWorkoutBlockPayload = {
+  name: string;
+  type: WorkoutBlockType;
+  rounds: number;
+  timeCap: string;
+  exercises: NewWorkoutExercisePayload[];
+};
+
 export type NewWorkoutPayload = {
-  title: string;
   workoutDate: string;
-  workoutType: string;
-  rankingOrder: string;
-  description: string;
-  sourceImageUrl?: string;
+  blocks: NewWorkoutBlockPayload[];
   scores?: {
     athleteId: number;
     scoreDisplay: string;

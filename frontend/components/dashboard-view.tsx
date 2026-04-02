@@ -9,16 +9,76 @@ import type {
   DashboardResponse,
   NewWorkoutPayload,
   ScoreInput,
-  SubmitWorkoutScorePayload
+  SubmitWorkoutScorePayload,
+  WorkoutBlockType,
+  WorkoutExerciseTargetType
 } from "@/lib/types";
 
-const initialWorkoutForm = {
-  title: "",
+type WorkoutExerciseForm = {
+  name: string;
+  targetType: WorkoutExerciseTargetType;
+  reps: string;
+  timeCap: string;
+  weightMen: string;
+  weightWomen: string;
+  percentRm: string;
+};
+
+type WorkoutBlockForm = {
+  name: string;
+  type: WorkoutBlockType;
+  rounds: string;
+  timeCap: string;
+  exercises: WorkoutExerciseForm[];
+};
+
+type WorkoutFormState = {
+  workoutDate: string;
+  blocks: WorkoutBlockForm[];
+};
+
+function labelWorkoutType(type: WorkoutBlockType) {
+  switch (type) {
+    case "for_time":
+      return "For time";
+    case "amrap":
+      return "AMRAP";
+    case "emon":
+      return "EMON";
+    case "tabata":
+      return "Tabata";
+    default:
+      return type;
+  }
+}
+
+function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): WorkoutExerciseForm {
+  return {
+    name: "",
+    targetType,
+    reps: "",
+    timeCap: "",
+    weightMen: "",
+    weightWomen: "",
+    percentRm: ""
+  };
+}
+
+function createEmptyBlock(type: WorkoutBlockType = "for_time"): WorkoutBlockForm {
+  const forcedTimeCap = type === "emon" || type === "tabata";
+
+  return {
+    name: labelWorkoutType(type),
+    type,
+    rounds: "",
+    timeCap: "",
+    exercises: [createEmptyExercise(forcedTimeCap ? "time_cap" : "reps")]
+  };
+}
+
+const initialWorkoutForm: WorkoutFormState = {
   workoutDate: "",
-  workoutType: "for_time",
-  rankingOrder: "asc",
-  description: "",
-  sourceImageUrl: ""
+  blocks: [createEmptyBlock()]
 };
 
 const initialScoreForm: ScoreInput = {
@@ -94,6 +154,98 @@ export function DashboardView({
     void loadDashboard();
   }, []);
 
+  function updateBlock(
+    blockIndex: number,
+    updater: (block: WorkoutBlockForm) => WorkoutBlockForm
+  ) {
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: current.blocks.map((block, index) =>
+        index === blockIndex ? updater(block) : block
+      )
+    }));
+  }
+
+  function addBlock() {
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: [...current.blocks, createEmptyBlock()]
+    }));
+  }
+
+  function removeBlock(blockIndex: number) {
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks:
+        current.blocks.length === 1
+          ? current.blocks
+          : current.blocks.filter((_, index) => index !== blockIndex)
+    }));
+  }
+
+  function addExercise(blockIndex: number) {
+    updateBlock(blockIndex, (block) => ({
+      ...block,
+      exercises: [
+        ...block.exercises,
+        createEmptyExercise(block.type === "emon" || block.type === "tabata" ? "time_cap" : "reps")
+      ]
+    }));
+  }
+
+  function removeExercise(blockIndex: number, exerciseIndex: number) {
+    updateBlock(blockIndex, (block) => ({
+      ...block,
+      exercises:
+        block.exercises.length === 1
+          ? block.exercises
+          : block.exercises.filter((_, index) => index !== exerciseIndex)
+    }));
+  }
+
+  function updateBlockType(blockIndex: number, nextType: WorkoutBlockType) {
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: current.blocks.map((block, index) => {
+        if (index !== blockIndex) {
+          return block;
+        }
+
+        const requiresTimeCap = nextType === "emon" || nextType === "tabata";
+        const previousTypeLabel = labelWorkoutType(block.type);
+        const nextTypeLabel = labelWorkoutType(nextType);
+
+        return {
+          ...block,
+          name: block.name === previousTypeLabel ? nextTypeLabel : block.name,
+          type: nextType,
+          exercises: block.exercises.map((exercise) =>
+            requiresTimeCap
+              ? {
+                  ...exercise,
+                  targetType: "time_cap",
+                  reps: ""
+                }
+              : exercise
+          )
+        };
+      })
+    }));
+  }
+
+  function updateExercise(
+    blockIndex: number,
+    exerciseIndex: number,
+    updater: (exercise: WorkoutExerciseForm) => WorkoutExerciseForm
+  ) {
+    updateBlock(blockIndex, (block) => ({
+      ...block,
+      exercises: block.exercises.map((exercise, index) =>
+        index === exerciseIndex ? updater(exercise) : exercise
+      )
+    }));
+  }
+
   async function handleCreateWorkout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmittingWorkout(true);
@@ -101,12 +253,22 @@ export function DashboardView({
     setWorkoutError(null);
 
     const payload: NewWorkoutPayload = {
-      title: workoutForm.title,
       workoutDate: workoutForm.workoutDate,
-      workoutType: workoutForm.workoutType,
-      rankingOrder: workoutForm.rankingOrder,
-      description: workoutForm.description,
-      sourceImageUrl: workoutForm.sourceImageUrl
+      blocks: workoutForm.blocks.map((block) => ({
+        name: block.name,
+        type: block.type,
+        rounds: Number(block.rounds),
+        timeCap: block.timeCap,
+        exercises: block.exercises.map((exercise) => ({
+          name: exercise.name,
+          targetType: exercise.targetType,
+          reps: exercise.targetType === "reps" ? Number(exercise.reps) : undefined,
+          timeCap: exercise.targetType === "time_cap" ? exercise.timeCap : undefined,
+          weightMen: exercise.weightMen,
+          weightWomen: exercise.weightWomen,
+          percentRm: exercise.percentRm
+        }))
+      }))
     };
 
     try {
@@ -194,7 +356,7 @@ export function DashboardView({
       ? "Consulta el WOD destacado del dia, el score ganador hasta el momento y el pulso general del box."
       : activeSection === "ranking"
         ? "Revisa el leaderboard actual y entra al detalle individual de cada atleta."
-        : "Publica el WOD del dia y permite que cada atleta cargue su propio score por separado.";
+        : "Publica el WOD del dia con bloques y ejercicios para que cada atleta cargue su propio score por separado.";
 
   return (
     <main className="page-shell">
@@ -463,96 +625,292 @@ export function DashboardView({
                     <p className="eyebrow">Carga</p>
                     <h2>Publicar WOD del dia</h2>
                   </div>
-                  <span className="panel-caption">Paso 1 del flujo</span>
+                  <span className="panel-caption">Fecha, bloques y ejercicios</span>
                 </div>
 
                 <form className="workout-form" onSubmit={(event) => void handleCreateWorkout(event)}>
-                  <div className="field-grid">
-                    <label>
-                      <span>Titulo</span>
-                      <input
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({ ...current, title: event.target.value }))
-                        }
-                        placeholder="Open 24.4"
-                        value={workoutForm.title}
-                      />
-                    </label>
-                    <label>
-                      <span>Fecha</span>
-                      <input
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            workoutDate: event.target.value
-                          }))
-                        }
-                        type="date"
-                        value={workoutForm.workoutDate}
-                      />
-                    </label>
-                    <label>
-                      <span>Tipo</span>
-                      <select
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            workoutType: event.target.value
-                          }))
-                        }
-                        value={workoutForm.workoutType}
-                      >
-                        <option value="for_time">For time</option>
-                        <option value="amrap">AMRAP</option>
-                        <option value="emon">EMON</option>
-                        <option value="tabata">Tabata</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>Ranking</span>
-                      <select
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            rankingOrder: event.target.value
-                          }))
-                        }
-                        value={workoutForm.rankingOrder}
-                      >
-                        <option value="asc">Menor score gana</option>
-                        <option value="desc">Mayor score gana</option>
-                      </select>
-                    </label>
-                  </div>
-
                   <label>
-                    <span>Descripcion</span>
-                    <textarea
-                      onChange={(event) =>
-                        setWorkoutForm((current) => ({
-                          ...current,
-                          description: event.target.value
-                        }))
-                      }
-                      placeholder="21-15-9 thrusters and pull-ups"
-                      rows={3}
-                      value={workoutForm.description}
-                    />
-                  </label>
-
-                  <label>
-                    <span>Imagen de referencia</span>
+                    <span>Fecha</span>
                     <input
                       onChange={(event) =>
                         setWorkoutForm((current) => ({
                           ...current,
-                          sourceImageUrl: event.target.value
+                          workoutDate: event.target.value
                         }))
                       }
-                      placeholder="https://..."
-                      value={workoutForm.sourceImageUrl}
+                      required
+                      type="date"
+                      value={workoutForm.workoutDate}
                     />
                   </label>
+
+                  <div className="form-section-header">
+                    <div>
+                      <span className="card-label">Bloques</span>
+                      <p>Agrega los bloques necesarios y completa sus ejercicios.</p>
+                    </div>
+                    <button className="ghost-button" onClick={addBlock} type="button">
+                      + Agregar bloque
+                    </button>
+                  </div>
+
+                  <div className="blocks-list">
+                    {workoutForm.blocks.map((block, blockIndex) => {
+                      const requiresTimeCap = block.type === "emon" || block.type === "tabata";
+
+                      return (
+                        <section className="workout-block-card" key={`block-${blockIndex}`}>
+                          <div className="form-section-header">
+                            <div>
+                              <span className="card-label">Bloque {blockIndex + 1}</span>
+                            </div>
+                            <button
+                              className="ghost-button"
+                              disabled={workoutForm.blocks.length === 1}
+                              onClick={() => removeBlock(blockIndex)}
+                              type="button"
+                            >
+                              Quitar bloque
+                            </button>
+                          </div>
+
+                          <div className="field-grid">
+                            <label>
+                              <span>Nombre</span>
+                              <input
+                                onChange={(event) =>
+                                  updateBlock(blockIndex, (current) => ({
+                                    ...current,
+                                    name: event.target.value
+                                  }))
+                                }
+                                placeholder="Buy in"
+                                required
+                                value={block.name}
+                              />
+                            </label>
+                            <label>
+                              <span>Tipo</span>
+                              <select
+                                onChange={(event) =>
+                                  updateBlockType(blockIndex, event.target.value as WorkoutBlockType)
+                                }
+                                value={block.type}
+                              >
+                                <option value="for_time">For time</option>
+                                <option value="amrap">AMRAP</option>
+                                <option value="emon">EMON</option>
+                                <option value="tabata">Tabata</option>
+                              </select>
+                            </label>
+                            <label>
+                              <span>Rondas</span>
+                              <input
+                                min="1"
+                                onChange={(event) =>
+                                  updateBlock(blockIndex, (current) => ({
+                                    ...current,
+                                    rounds: event.target.value
+                                  }))
+                                }
+                                placeholder="3"
+                                required
+                                type="number"
+                                value={block.rounds}
+                              />
+                            </label>
+                            <label>
+                              <span>Time Cap</span>
+                              <input
+                                onChange={(event) =>
+                                  updateBlock(blockIndex, (current) => ({
+                                    ...current,
+                                    timeCap: event.target.value
+                                  }))
+                                }
+                                placeholder="12:00"
+                                required
+                                value={block.timeCap}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="form-section-header compact">
+                            <div>
+                              <span className="card-label">Ejercicios</span>
+                              <p>
+                                {requiresTimeCap
+                                  ? "Cada ejercicio usa time cap."
+                                  : "Cada ejercicio puede usar repeticiones o time cap."}
+                              </p>
+                            </div>
+                            <button
+                              className="ghost-button"
+                              onClick={() => addExercise(blockIndex)}
+                              type="button"
+                            >
+                              + Agregar ejercicio
+                            </button>
+                          </div>
+
+                          <div className="exercise-list">
+                            {block.exercises.map((exercise, exerciseIndex) => (
+                              <div
+                                className="workout-exercise-card"
+                                key={`exercise-${blockIndex}-${exerciseIndex}`}
+                              >
+                                <div className="form-section-header compact">
+                                  <div>
+                                    <span className="card-label">Ejercicio {exerciseIndex + 1}</span>
+                                  </div>
+                                  <button
+                                    className="ghost-button"
+                                    disabled={block.exercises.length === 1}
+                                    onClick={() => removeExercise(blockIndex, exerciseIndex)}
+                                    type="button"
+                                  >
+                                    Quitar ejercicio
+                                  </button>
+                                </div>
+
+                                <div className="field-grid">
+                                  <label>
+                                    <span>Nombre</span>
+                                    <input
+                                      onChange={(event) =>
+                                        updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                          ...current,
+                                          name: event.target.value
+                                        }))
+                                      }
+                                      placeholder="Thruster"
+                                      required
+                                      value={exercise.name}
+                                    />
+                                  </label>
+
+                                  {requiresTimeCap ? (
+                                    <label>
+                                      <span>Time Cap</span>
+                                      <input
+                                        onChange={(event) =>
+                                          updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                            ...current,
+                                            timeCap: event.target.value
+                                          }))
+                                        }
+                                        placeholder="00:20"
+                                        required
+                                        value={exercise.timeCap}
+                                      />
+                                    </label>
+                                  ) : (
+                                    <>
+                                      <label>
+                                        <span>Objetivo</span>
+                                        <select
+                                          onChange={(event) =>
+                                            updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                              ...current,
+                                              targetType: event.target.value as WorkoutExerciseTargetType,
+                                              reps:
+                                                event.target.value === "reps" ? current.reps : "",
+                                              timeCap:
+                                                event.target.value === "time_cap"
+                                                  ? current.timeCap
+                                                  : ""
+                                            }))
+                                          }
+                                          value={exercise.targetType}
+                                        >
+                                          <option value="reps">Repeticiones</option>
+                                          <option value="time_cap">Time Cap</option>
+                                        </select>
+                                      </label>
+
+                                      {exercise.targetType === "reps" ? (
+                                        <label>
+                                          <span>Repeticiones</span>
+                                          <input
+                                            min="1"
+                                            onChange={(event) =>
+                                              updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                                ...current,
+                                                reps: event.target.value
+                                              }))
+                                            }
+                                            placeholder="21"
+                                            required
+                                            type="number"
+                                            value={exercise.reps}
+                                          />
+                                        </label>
+                                      ) : (
+                                        <label>
+                                          <span>Time Cap</span>
+                                          <input
+                                            onChange={(event) =>
+                                              updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                                ...current,
+                                                timeCap: event.target.value
+                                              }))
+                                            }
+                                            placeholder="01:00"
+                                            required
+                                            value={exercise.timeCap}
+                                          />
+                                        </label>
+                                      )}
+                                    </>
+                                  )}
+
+                                  <label>
+                                    <span>Peso Hombre</span>
+                                    <input
+                                      onChange={(event) =>
+                                        updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                          ...current,
+                                          weightMen: event.target.value
+                                        }))
+                                      }
+                                      placeholder="43/30 kg"
+                                      value={exercise.weightMen}
+                                    />
+                                  </label>
+                                  <label>
+                                    <span>Peso Mujer</span>
+                                    <input
+                                      onChange={(event) =>
+                                        updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                          ...current,
+                                          weightWomen: event.target.value
+                                        }))
+                                      }
+                                      placeholder="30/20 kg"
+                                      value={exercise.weightWomen}
+                                    />
+                                  </label>
+                                  <label className="field-span-2">
+                                    <span>% RM</span>
+                                    <input
+                                      onChange={(event) =>
+                                        updateExercise(blockIndex, exerciseIndex, (current) => ({
+                                          ...current,
+                                          percentRm: event.target.value
+                                        }))
+                                      }
+                                      placeholder="75%"
+                                      value={exercise.percentRm}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
 
                   <div className="form-actions">
                     <button className="primary-button" disabled={submittingWorkout} type="submit">

@@ -2,13 +2,59 @@ import { z } from "zod";
 
 const normalizedString = z.string().trim();
 
+const workoutExerciseSchema = z
+  .object({
+    name: normalizedString.min(1),
+    targetType: z.enum(["reps", "time_cap"]),
+    reps: z.number().int().positive().optional(),
+    timeCap: normalizedString.optional(),
+    weightMen: normalizedString.optional(),
+    weightWomen: normalizedString.optional(),
+    percentRm: normalizedString.optional()
+  })
+  .superRefine((exercise, context) => {
+    if (exercise.targetType === "reps" && exercise.reps === undefined) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["reps"],
+        message: "Las repeticiones son obligatorias para este ejercicio."
+      });
+    }
+
+    if (exercise.targetType === "time_cap" && !exercise.timeCap) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["timeCap"],
+        message: "El time cap es obligatorio para este ejercicio."
+      });
+    }
+  });
+
+const workoutBlockSchema = z
+  .object({
+    name: normalizedString.min(1),
+    type: z.enum(["for_time", "amrap", "emon", "tabata"]),
+    rounds: z.number().int().positive(),
+    timeCap: normalizedString.min(1),
+    exercises: z.array(workoutExerciseSchema).min(1)
+  })
+  .superRefine((block, context) => {
+    if (block.type === "emon" || block.type === "tabata") {
+      block.exercises.forEach((exercise, index) => {
+        if (exercise.targetType !== "time_cap") {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["exercises", index, "targetType"],
+            message: "En este tipo de bloque el ejercicio debe medirse por time cap."
+          });
+        }
+      });
+    }
+  });
+
 export const createWorkoutSchema = z.object({
-  title: normalizedString.min(2),
   workoutDate: z.string().date(),
-  workoutType: z.enum(["for_time", "amrap", "emon","tabata"]),
-  rankingOrder: z.enum(["asc", "desc"]),
-  description: normalizedString.min(4),
-  sourceImageUrl: normalizedString.url().optional().or(z.literal("")),
+  blocks: z.array(workoutBlockSchema).min(1),
   scores: z
     .array(
       z.object({
