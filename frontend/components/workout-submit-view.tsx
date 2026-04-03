@@ -506,8 +506,8 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                     <span className="card-label">Bloque en edicion</span>
                     <p>Completa el bloque y luego agregalo a la vista previa.</p>
                   </div>
-                  <button className="ghost-button" onClick={handleAddBlock} type="button">
-                    + Agregar bloque
+                  <button className="ghost-button button-with-icon" onClick={handleAddBlock} type="button">
+                    +
                   </button>
                 </div>
 
@@ -596,11 +596,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             <span className="card-label">Ejercicio {exerciseIndex + 1}</span>
                           </div>
                           <button
-                            className="ghost-button"
+                            className="ghost-button button-with-icon"
                             onClick={() => handleRemoveDraftExercise(exerciseIndex)}
                             type="button"
                           >
-                            Quitar ejercicio
+                            <i className="fa fa-plus"></i>
                           </button>
                         </div>
                         <div>
@@ -623,8 +623,8 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                         : "Completa un ejercicio y agregalo al bloque actual."}
                     </p>
                   </div>
-                  <button className="ghost-button" onClick={handleAddExercise} type="button">
-                    + Agregar ejercicio
+                  <button className="ghost-button button-with-icon" onClick={handleAddExercise} type="button">
+                    +
                   </button>
                 </div>
 
@@ -787,11 +787,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                           {buildBlockProperties(block) || "Completa las propiedades del bloque"}
                         </span>
                         <button
-                          className="ghost-button"
+                          className="ghost-button button-with-icon"
                           onClick={() => handleRemoveBlock(blockIndex)}
                           type="button"
                         >
-                          Quitar bloque
+                          -                          
                         </button>
                       </div>
                     </div>
@@ -815,7 +815,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                               onClick={() => handleRemoveBlockExercise(blockIndex, exerciseIndex)}
                               type="button"
                             >
-                              Quitar
+                              -
                             </button>
                           </div>
                         </div>

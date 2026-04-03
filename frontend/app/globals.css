@@ -858,6 +858,17 @@ button {
   color: var(--text);
 }
 
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.button-with-icon svg {
+  flex: 0 0 auto;
+  display: block;
+}
+
 .icon-button {
   width: 44px;
   height: 44px;
