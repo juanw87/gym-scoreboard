@@ -51,6 +51,14 @@ function labelWorkoutType(type: WorkoutBlockType) {
   }
 }
 
+function requiresBlockTimeCap(type: WorkoutBlockType) {
+  return type === "emon" || type === "tabata";
+}
+
+function blockUsesRounds(type: WorkoutBlockType) {
+  return type === "for_time";
+}
+
 function deriveWorkoutType(blocks: WorkoutBlockForm[]) {
   const availableTypes = blocks
     .map((block) => block.type)
@@ -88,7 +96,7 @@ function buildBlockProperties(block: WorkoutBlockForm) {
     block.timeCap ? `TC ${block.timeCap}` : null
   ];
 
-  return properties.filter(Boolean).join(" • ");
+  return properties.filter(Boolean).join(" | ");
 }
 
 function buildExerciseProperties(exercise: WorkoutExerciseForm) {
@@ -107,7 +115,7 @@ function buildExerciseProperties(exercise: WorkoutExerciseForm) {
     exercise.percentRm ? `%RM ${exercise.percentRm}` : null
   ];
 
-  return [target, ...loads].filter(Boolean).join(" • ");
+  return [target, ...loads].filter(Boolean).join(" | ");
 }
 
 function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): WorkoutExerciseForm {
@@ -123,20 +131,18 @@ function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): Wo
 }
 
 function createEmptyBlock(type: WorkoutBlockType = "for_time"): WorkoutBlockForm {
-  const forcedTimeCap = type === "emon" || type === "tabata";
-
   return {
     name: labelWorkoutType(type),
     type,
     rounds: "",
     timeCap: "",
-    exercises: [createEmptyExercise(forcedTimeCap ? "time_cap" : "reps")]
+    exercises: []
   };
 }
 
 const initialWorkoutForm: WorkoutFormState = {
   workoutDate: "",
-  blocks: [createEmptyBlock()]
+  blocks: []
 };
 
 const initialScoreForm: ScoreInput = {
@@ -157,6 +163,8 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
   const [workoutError, setWorkoutError] = useState<string | null>(null);
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [workoutForm, setWorkoutForm] = useState(initialWorkoutForm);
+  const [currentBlock, setCurrentBlock] = useState<WorkoutBlockForm>(createEmptyBlock());
+  const [currentExercise, setCurrentExercise] = useState<WorkoutExerciseForm>(createEmptyExercise());
   const [scoreForm, setScoreForm] = useState<ScoreInput>(initialScoreForm);
 
   async function loadDashboard() {
@@ -179,100 +187,162 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
     void loadDashboard();
   }, []);
 
-  function updateBlock(
-    blockIndex: number,
-    updater: (block: WorkoutBlockForm) => WorkoutBlockForm
-  ) {
+  function resetCurrentExercise(nextBlockType: WorkoutBlockType = currentBlock.type) {
+    setCurrentExercise(createEmptyExercise(requiresBlockTimeCap(nextBlockType) ? "time_cap" : "reps"));
+  }
+
+  function resetCurrentBlock() {
+    const nextBlock = createEmptyBlock();
+    setCurrentBlock(nextBlock);
+    resetCurrentExercise(nextBlock.type);
+  }
+
+  function updateCurrentBlock(updater: (block: WorkoutBlockForm) => WorkoutBlockForm) {
+    setCurrentBlock((current) => updater(current));
+  }
+
+  function updateCurrentExercise(updater: (exercise: WorkoutExerciseForm) => WorkoutExerciseForm) {
+    setCurrentExercise((current) => updater(current));
+  }
+
+  function updateCurrentBlockType(nextType: WorkoutBlockType) {
+    updateCurrentBlock((current) => {
+      const previousTypeLabel = labelWorkoutType(current.type);
+      const nextTypeLabel = labelWorkoutType(nextType);
+
+      return {
+        ...current,
+        name: current.name === previousTypeLabel ? nextTypeLabel : current.name,
+        type: nextType,
+        rounds: blockUsesRounds(nextType) ? current.rounds : ""
+      };
+    });
+
+    setCurrentExercise((current) =>
+      requiresBlockTimeCap(nextType)
+        ? {
+            ...current,
+            targetType: "time_cap",
+            reps: ""
+          }
+        : current
+    );
+  }
+
+  function validateCurrentExercise() {
+    if (!currentExercise.name.trim()) {
+      return "Completa el nombre del ejercicio antes de agregarlo.";
+    }
+
+    if (currentExercise.targetType === "reps" && !currentExercise.reps.trim()) {
+      return "Completa las repeticiones del ejercicio antes de agregarlo.";
+    }
+
+    if (currentExercise.targetType === "time_cap" && !currentExercise.timeCap.trim()) {
+      return "Completa el time cap del ejercicio antes de agregarlo.";
+    }
+
+    return null;
+  }
+
+  function validateCurrentBlock() {
+    if (!currentBlock.name.trim()) {
+      return "Completa el nombre del bloque antes de agregarlo.";
+    }
+
+    if (blockUsesRounds(currentBlock.type) && !currentBlock.rounds.trim()) {
+      return "Completa las rondas del bloque antes de agregarlo.";
+    }
+
+    if (!currentBlock.timeCap.trim()) {
+      return "Completa el time cap del bloque antes de agregarlo.";
+    }
+
+    if (currentBlock.exercises.length === 0) {
+      return "Agrega al menos un ejercicio al bloque antes de incorporarlo al WOD.";
+    }
+
+    return null;
+  }
+
+  function handleAddExercise() {
+    const validationError = validateCurrentExercise();
+
+    setWorkoutMessage(null);
+    setWorkoutError(validationError);
+
+    if (validationError) {
+      return;
+    }
+
+    updateCurrentBlock((current) => ({
+      ...current,
+      exercises: [...current.exercises, currentExercise]
+    }));
+
+    resetCurrentExercise();
+  }
+
+  function handleRemoveDraftExercise(exerciseIndex: number) {
+    updateCurrentBlock((current) => ({
+      ...current,
+      exercises: current.exercises.filter((_, index) => index !== exerciseIndex)
+    }));
+  }
+
+  function handleAddBlock() {
+    const validationError = validateCurrentBlock();
+
+    setWorkoutMessage(null);
+    setWorkoutError(validationError);
+
+    if (validationError) {
+      return;
+    }
+
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: [...current.blocks, currentBlock]
+    }));
+
+    setWorkoutError(null);
+    resetCurrentBlock();
+  }
+
+  function handleRemoveBlock(blockIndex: number) {
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: current.blocks.filter((_, index) => index !== blockIndex)
+    }));
+  }
+
+  function handleRemoveBlockExercise(blockIndex: number, exerciseIndex: number) {
     setWorkoutForm((current) => ({
       ...current,
       blocks: current.blocks.map((block, index) =>
-        index === blockIndex ? updater(block) : block
+        index === blockIndex
+          ? {
+              ...block,
+              exercises: block.exercises.filter((_, itemIndex) => itemIndex !== exerciseIndex)
+            }
+          : block
       )
     }));
   }
 
-  function addBlock() {
-    setWorkoutForm((current) => ({
-      ...current,
-      blocks: [...current.blocks, createEmptyBlock()]
-    }));
-  }
+  async function handleCreateWorkout() {
+    if (!workoutForm.workoutDate.trim()) {
+      setWorkoutError("Completa la fecha del WOD antes de publicarlo.");
+      setWorkoutMessage(null);
+      return;
+    }
 
-  function removeBlock(blockIndex: number) {
-    setWorkoutForm((current) => ({
-      ...current,
-      blocks:
-        current.blocks.length === 1
-          ? current.blocks
-          : current.blocks.filter((_, index) => index !== blockIndex)
-    }));
-  }
+    if (workoutForm.blocks.length === 0) {
+      setWorkoutError("Agrega al menos un bloque a la vista previa antes de publicar el WOD.");
+      setWorkoutMessage(null);
+      return;
+    }
 
-  function addExercise(blockIndex: number) {
-    updateBlock(blockIndex, (block) => ({
-      ...block,
-      exercises: [
-        ...block.exercises,
-        createEmptyExercise(block.type === "emon" || block.type === "tabata" ? "time_cap" : "reps")
-      ]
-    }));
-  }
-
-  function removeExercise(blockIndex: number, exerciseIndex: number) {
-    updateBlock(blockIndex, (block) => ({
-      ...block,
-      exercises:
-        block.exercises.length === 1
-          ? block.exercises
-          : block.exercises.filter((_, index) => index !== exerciseIndex)
-    }));
-  }
-
-  function updateBlockType(blockIndex: number, nextType: WorkoutBlockType) {
-    setWorkoutForm((current) => ({
-      ...current,
-      blocks: current.blocks.map((block, index) => {
-        if (index !== blockIndex) {
-          return block;
-        }
-
-        const requiresTimeCap = nextType === "emon" || nextType === "tabata";
-        const previousTypeLabel = labelWorkoutType(block.type);
-        const nextTypeLabel = labelWorkoutType(nextType);
-
-        return {
-          ...block,
-          name: block.name === previousTypeLabel ? nextTypeLabel : block.name,
-          type: nextType,
-          exercises: block.exercises.map((exercise) =>
-            requiresTimeCap
-              ? {
-                  ...exercise,
-                  targetType: "time_cap",
-                  reps: ""
-                }
-              : exercise
-          )
-        };
-      })
-    }));
-  }
-
-  function updateExercise(
-    blockIndex: number,
-    exerciseIndex: number,
-    updater: (exercise: WorkoutExerciseForm) => WorkoutExerciseForm
-  ) {
-    updateBlock(blockIndex, (block) => ({
-      ...block,
-      exercises: block.exercises.map((exercise, index) =>
-        index === exerciseIndex ? updater(exercise) : exercise
-      )
-    }));
-  }
-
-  async function handleCreateWorkout(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
     setSubmittingWorkout(true);
     setWorkoutMessage(null);
     setWorkoutError(null);
@@ -302,10 +372,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
         body: JSON.stringify(payload)
       });
 
-      setWorkoutForm({
+      setWorkoutForm((current) => ({
         ...initialWorkoutForm,
-        workoutDate: workoutForm.workoutDate
-      });
+        workoutDate: current.workoutDate
+      }));
+      resetCurrentBlock();
       setWorkoutMessage("WOD creado. Ahora cada atleta puede cargar su score por separado.");
       await loadDashboard();
     } catch (requestError) {
@@ -369,7 +440,21 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
     );
   }
 
-  const previewWorkoutType = deriveWorkoutType(workoutForm.blocks);
+  const previewWorkoutType = deriveWorkoutType(
+    workoutForm.blocks.length > 0 ? workoutForm.blocks : [currentBlock]
+  );
+  const previewBlocks = [...workoutForm.blocks];
+  const currentExerciseHasData =
+    currentExercise.name.trim() ||
+    currentExercise.reps.trim() ||
+    currentExercise.timeCap.trim() ||
+    currentExercise.weightMen.trim() ||
+    currentExercise.weightWomen.trim() ||
+    currentExercise.percentRm.trim();
+  const draftBlockExercises = currentExerciseHasData
+    ? [...currentBlock.exercises, currentExercise]
+    : currentBlock.exercises;
+  const draftBlockLabel = workoutForm.blocks.length + 1;
 
   return (
     <main className="page-shell">
@@ -382,8 +467,8 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
           <p className="eyebrow">Carga</p>
           <h1>Publica el WOD y revisa la vista previa en tiempo real.</h1>
           <p className="hero-copy">
-            Crea el WOD con sus bloques y ejercicios en una pantalla dedicada. Tambien puedes
-            cargar tu score sobre el WOD vigente desde esta misma vista.
+            Completa el bloque en edicion, agrega sus ejercicios uno por uno y luego incorpora el
+            bloque a la vista previa. Publica el WOD final desde el panel lateral.
           </p>
         </div>
       </section>
@@ -394,12 +479,12 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Carga</p>
-                <h2>Publicar WOD del dia</h2>
+                <h2>Armar WOD del dia</h2>
               </div>
-              <span className="panel-caption">Fecha, bloques y ejercicios</span>
+              <span className="panel-caption">Fecha, bloque actual y ejercicio actual</span>
             </div>
 
-            <form className="workout-form" onSubmit={(event) => void handleCreateWorkout(event)}>
+            <div className="workout-form">
               <label>
                 <span>Fecha</span>
                 <input
@@ -415,279 +500,263 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                 />
               </label>
 
-              <div className="form-section-header">
-                <div>
-                  <span className="card-label">Bloques</span>
-                  <p>Agrega los bloques necesarios y completa sus ejercicios.</p>
+              <section className="workout-block-card">
+                <div className="form-section-header">
+                  <div>
+                    <span className="card-label">Bloque en edicion</span>
+                    <p>Completa el bloque y luego agregalo a la vista previa.</p>
+                  </div>
+                  <button className="ghost-button" onClick={handleAddBlock} type="button">
+                    + Agregar bloque
+                  </button>
                 </div>
-                <button className="ghost-button" onClick={addBlock} type="button">
-                  + Agregar bloque
-                </button>
-              </div>
 
-              <div className="blocks-list">
-                {workoutForm.blocks.map((block, blockIndex) => {
-                  const requiresTimeCap = block.type === "emon" || block.type === "tabata";
+                <div className="field-grid">
+                  <label>
+                    <span>Nombre</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentBlock((current) => ({
+                          ...current,
+                          name: event.target.value
+                        }))
+                      }
+                      placeholder="Buy in"
+                      required
+                      value={currentBlock.name}
+                    />
+                  </label>
+                  <label>
+                    <span>Tipo</span>
+                    <select
+                      onChange={(event) =>
+                        updateCurrentBlockType(event.target.value as WorkoutBlockType)
+                      }
+                      value={currentBlock.type}
+                    >
+                      <option value="for_time">For time</option>
+                      <option value="amrap">AMRAP</option>
+                      <option value="emon">EMON</option>
+                      <option value="tabata">Tabata</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Rondas</span>
+                    <input
+                      disabled={!blockUsesRounds(currentBlock.type)}
+                      min="1"
+                      onChange={(event) =>
+                        updateCurrentBlock((current) => ({
+                          ...current,
+                          rounds: event.target.value
+                        }))
+                      }
+                      placeholder="3"
+                      required={blockUsesRounds(currentBlock.type)}
+                      type="number"
+                      value={currentBlock.rounds}
+                    />
+                  </label>
+                  <label>
+                    <span>Time Cap</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentBlock((current) => ({
+                          ...current,
+                          timeCap: event.target.value
+                        }))
+                      }
+                      placeholder="12:00"
+                      required
+                      value={currentBlock.timeCap}
+                    />
+                  </label>
+                </div>
 
-                  return (
-                    <section className="workout-block-card" key={`block-${blockIndex}`}>
-                      <div className="form-section-header">
-                        <div>
-                          <span className="card-label">Bloque {blockIndex + 1}</span>
-                        </div>
-                        <button
-                          className="ghost-button"
-                          disabled={workoutForm.blocks.length === 1}
-                          onClick={() => removeBlock(blockIndex)}
-                          type="button"
-                        >
-                          Quitar bloque
-                        </button>
-                      </div>
+                <div className="form-section-header compact">
+                  <div>
+                    <span className="card-label">Ejercicios agregados al bloque</span>
+                    <p>
+                      {currentBlock.exercises.length > 0
+                        ? `${currentBlock.exercises.length} ejercicio(s) listos para incorporar al bloque.`
+                        : "Todavia no agregaste ejercicios a este bloque."}
+                    </p>
+                  </div>
+                </div>
 
-                      <div className="field-grid">
-                        <label>
-                          <span>Nombre</span>
-                          <input
-                            onChange={(event) =>
-                              updateBlock(blockIndex, (current) => ({
-                                ...current,
-                                name: event.target.value
-                              }))
-                            }
-                            placeholder="Buy in"
-                            required
-                            value={block.name}
-                          />
-                        </label>
-                        <label>
-                          <span>Tipo</span>
-                          <select
-                            onChange={(event) =>
-                              updateBlockType(blockIndex, event.target.value as WorkoutBlockType)
-                            }
-                            value={block.type}
+                {currentBlock.exercises.length > 0 ? (
+                  <div className="exercise-list">
+                    {currentBlock.exercises.map((exercise, exerciseIndex) => (
+                      <div
+                        className="workout-exercise-card"
+                        key={`draft-exercise-${exerciseIndex}`}
+                      >
+                        <div className="form-section-header compact">
+                          <div>
+                            <span className="card-label">Ejercicio {exerciseIndex + 1}</span>
+                          </div>
+                          <button
+                            className="ghost-button"
+                            onClick={() => handleRemoveDraftExercise(exerciseIndex)}
+                            type="button"
                           >
-                            <option value="for_time">For time</option>
-                            <option value="amrap">AMRAP</option>
-                            <option value="emon">EMON</option>
-                            <option value="tabata">Tabata</option>
-                          </select>
-                        </label>
+                            Quitar ejercicio
+                          </button>
+                        </div>
+                        <div>
+                          <strong>{exercise.name}</strong>
+                          <p>{buildExerciseProperties(exercise) || "Sin propiedades"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="workout-exercise-card">
+                <div className="form-section-header compact">
+                  <div>
+                    <span className="card-label">Ejercicio en edicion</span>
+                    <p>
+                      {requiresBlockTimeCap(currentBlock.type)
+                        ? "Este bloque usa ejercicios por time cap."
+                        : "Completa un ejercicio y agregalo al bloque actual."}
+                    </p>
+                  </div>
+                  <button className="ghost-button" onClick={handleAddExercise} type="button">
+                    + Agregar ejercicio
+                  </button>
+                </div>
+
+                <div className="field-grid">
+                  <label>
+                    <span>Nombre</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentExercise((current) => ({
+                          ...current,
+                          name: event.target.value
+                        }))
+                      }
+                      placeholder="Thruster"
+                      required
+                      value={currentExercise.name}
+                    />
+                  </label>
+
+                  {requiresBlockTimeCap(currentBlock.type) ? (
+                    <label>
+                      <span>Time Cap</span>
+                      <input
+                        onChange={(event) =>
+                          updateCurrentExercise((current) => ({
+                            ...current,
+                            timeCap: event.target.value
+                          }))
+                        }
+                        placeholder="00:20"
+                        required
+                        value={currentExercise.timeCap}
+                      />
+                    </label>
+                  ) : (
+                    <>
+                      <label>
+                        <span>Objetivo</span>
+                        <select
+                          onChange={(event) =>
+                            updateCurrentExercise((current) => ({
+                              ...current,
+                              targetType: event.target.value as WorkoutExerciseTargetType,
+                              reps: event.target.value === "reps" ? current.reps : "",
+                              timeCap: event.target.value === "time_cap" ? current.timeCap : ""
+                            }))
+                          }
+                          value={currentExercise.targetType}
+                        >
+                          <option value="reps">Repeticiones</option>
+                          <option value="time_cap">Time Cap</option>
+                        </select>
+                      </label>
+
+                      {currentExercise.targetType === "reps" ? (
                         <label>
-                          <span>Rondas</span>
+                          <span>Repeticiones</span>
                           <input
                             min="1"
                             onChange={(event) =>
-                              updateBlock(blockIndex, (current) => ({
+                              updateCurrentExercise((current) => ({
                                 ...current,
-                                rounds: event.target.value
+                                reps: event.target.value
                               }))
                             }
-                            placeholder="3"
+                            placeholder="21"
                             required
                             type="number"
-                            value={block.rounds}
+                            value={currentExercise.reps}
                           />
                         </label>
+                      ) : (
                         <label>
                           <span>Time Cap</span>
                           <input
                             onChange={(event) =>
-                              updateBlock(blockIndex, (current) => ({
+                              updateCurrentExercise((current) => ({
                                 ...current,
                                 timeCap: event.target.value
                               }))
                             }
-                            placeholder="12:00"
+                            placeholder="01:00"
                             required
-                            value={block.timeCap}
+                            value={currentExercise.timeCap}
                           />
                         </label>
-                      </div>
+                      )}
+                    </>
+                  )}
 
-                      <div className="form-section-header compact">
-                        <div>
-                          <span className="card-label">Ejercicios</span>
-                          <p>
-                            {requiresTimeCap
-                              ? "Cada ejercicio usa time cap."
-                              : "Cada ejercicio puede usar repeticiones o time cap."}
-                          </p>
-                        </div>
-                        <button
-                          className="ghost-button"
-                          onClick={() => addExercise(blockIndex)}
-                          type="button"
-                        >
-                          + Agregar ejercicio
-                        </button>
-                      </div>
-
-                      <div className="exercise-list">
-                        {block.exercises.map((exercise, exerciseIndex) => (
-                          <div
-                            className="workout-exercise-card"
-                            key={`exercise-${blockIndex}-${exerciseIndex}`}
-                          >
-                            <div className="form-section-header compact">
-                              <div>
-                                <span className="card-label">Ejercicio {exerciseIndex + 1}</span>
-                              </div>
-                              <button
-                                className="ghost-button"
-                                disabled={block.exercises.length === 1}
-                                onClick={() => removeExercise(blockIndex, exerciseIndex)}
-                                type="button"
-                              >
-                                Quitar ejercicio
-                              </button>
-                            </div>
-
-                            <div className="field-grid">
-                              <label>
-                                <span>Nombre</span>
-                                <input
-                                  onChange={(event) =>
-                                    updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                      ...current,
-                                      name: event.target.value
-                                    }))
-                                  }
-                                  placeholder="Thruster"
-                                  required
-                                  value={exercise.name}
-                                />
-                              </label>
-
-                              {requiresTimeCap ? (
-                                <label>
-                                  <span>Time Cap</span>
-                                  <input
-                                    onChange={(event) =>
-                                      updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                        ...current,
-                                        timeCap: event.target.value
-                                      }))
-                                    }
-                                    placeholder="00:20"
-                                    required
-                                    value={exercise.timeCap}
-                                  />
-                                </label>
-                              ) : (
-                                <>
-                                  <label>
-                                    <span>Objetivo</span>
-                                    <select
-                                      onChange={(event) =>
-                                        updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                          ...current,
-                                          targetType: event.target.value as WorkoutExerciseTargetType,
-                                          reps: event.target.value === "reps" ? current.reps : "",
-                                          timeCap:
-                                            event.target.value === "time_cap" ? current.timeCap : ""
-                                        }))
-                                      }
-                                      value={exercise.targetType}
-                                    >
-                                      <option value="reps">Repeticiones</option>
-                                      <option value="time_cap">Time Cap</option>
-                                    </select>
-                                  </label>
-
-                                  {exercise.targetType === "reps" ? (
-                                    <label>
-                                      <span>Repeticiones</span>
-                                      <input
-                                        min="1"
-                                        onChange={(event) =>
-                                          updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                            ...current,
-                                            reps: event.target.value
-                                          }))
-                                        }
-                                        placeholder="21"
-                                        required
-                                        type="number"
-                                        value={exercise.reps}
-                                      />
-                                    </label>
-                                  ) : (
-                                    <label>
-                                      <span>Time Cap</span>
-                                      <input
-                                        onChange={(event) =>
-                                          updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                            ...current,
-                                            timeCap: event.target.value
-                                          }))
-                                        }
-                                        placeholder="01:00"
-                                        required
-                                        value={exercise.timeCap}
-                                      />
-                                    </label>
-                                  )}
-                                </>
-                              )}
-
-                              <label>
-                                <span>Peso Hombre</span>
-                                <input
-                                  onChange={(event) =>
-                                    updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                      ...current,
-                                      weightMen: event.target.value
-                                    }))
-                                  }
-                                  placeholder="43/30 kg"
-                                  value={exercise.weightMen}
-                                />
-                              </label>
-                              <label>
-                                <span>Peso Mujer</span>
-                                <input
-                                  onChange={(event) =>
-                                    updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                      ...current,
-                                      weightWomen: event.target.value
-                                    }))
-                                  }
-                                  placeholder="30/20 kg"
-                                  value={exercise.weightWomen}
-                                />
-                              </label>
-                              <label className="field-span-2">
-                                <span>% RM</span>
-                                <input
-                                  onChange={(event) =>
-                                    updateExercise(blockIndex, exerciseIndex, (current) => ({
-                                      ...current,
-                                      percentRm: event.target.value
-                                    }))
-                                  }
-                                  placeholder="75%"
-                                  value={exercise.percentRm}
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-
-              <div className="form-actions">
-                <button className="primary-button" disabled={submittingWorkout} type="submit">
-                  {submittingWorkout ? "Guardando..." : "Publicar WOD"}
-                </button>
-                {workoutMessage ? <span className="success-message">{workoutMessage}</span> : null}
-                {workoutError ? <span className="error-message">{workoutError}</span> : null}
-              </div>
-            </form>
+                  <label>
+                    <span>Peso Hombre</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentExercise((current) => ({
+                          ...current,
+                          weightMen: event.target.value
+                        }))
+                      }
+                      placeholder="43/30 kg"
+                      value={currentExercise.weightMen}
+                    />
+                  </label>
+                  <label>
+                    <span>Peso Mujer</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentExercise((current) => ({
+                          ...current,
+                          weightWomen: event.target.value
+                        }))
+                      }
+                      placeholder="30/20 kg"
+                      value={currentExercise.weightWomen}
+                    />
+                  </label>
+                  <label className="field-span-2">
+                    <span>% RM</span>
+                    <input
+                      onChange={(event) =>
+                        updateCurrentExercise((current) => ({
+                          ...current,
+                          percentRm: event.target.value
+                        }))
+                      }
+                      placeholder="75%"
+                      value={currentExercise.percentRm}
+                    />
+                  </label>
+                </div>
+              </section>
+            </div>
           </article>
 
           <aside className="panel workout-preview-panel">
@@ -696,7 +765,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                 <p className="eyebrow">Vista previa</p>
                 <h2>WOD en vivo</h2>
               </div>
-              <span className="panel-caption">Se actualiza al cargar bloques y ejercicios</span>
+              <span className="panel-caption">Se actualiza mientras completas la carga</span>
             </div>
 
             <div className="workout-preview-shell">
@@ -706,16 +775,25 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
               </div>
 
               <div className="workout-preview-list">
-                {workoutForm.blocks.map((block, blockIndex) => (
+                {previewBlocks.map((block, blockIndex) => (
                   <section className="preview-block-card" key={`preview-block-${blockIndex}`}>
                     <div className="preview-block-heading">
                       <div>
                         <span className="card-label">Bloque {blockIndex + 1}</span>
                         <strong>{block.name || `Bloque ${blockIndex + 1}`}</strong>
                       </div>
-                      <span className="preview-block-properties">
-                        {buildBlockProperties(block) || "Completa las propiedades del bloque"}
-                      </span>
+                      <div className="preview-inline-actions">
+                        <span className="preview-block-properties">
+                          {buildBlockProperties(block) || "Completa las propiedades del bloque"}
+                        </span>
+                        <button
+                          className="ghost-button"
+                          onClick={() => handleRemoveBlock(blockIndex)}
+                          type="button"
+                        >
+                          Quitar bloque
+                        </button>
+                      </div>
                     </div>
 
                     <div className="preview-exercise-list">
@@ -725,8 +803,47 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                           key={`preview-exercise-${blockIndex}-${exerciseIndex}`}
                         >
                           <div>
+                            <span className="preview-exercise-index">Ejercicio {exerciseIndex + 1}</span>
+                            <strong>{exercise.name || "Ejercicio pendiente"}</strong>
+                          </div>
+                          <div className="preview-inline-actions">
+                            <span className="preview-exercise-properties">
+                              {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
+                            </span>
+                            <button
+                              className="ghost-button"
+                              onClick={() => handleRemoveBlockExercise(blockIndex, exerciseIndex)}
+                              type="button"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+
+                <section className="preview-block-card is-draft">
+                  <div className="preview-block-heading">
+                    <div>
+                      <span className="card-label">Bloque {draftBlockLabel}</span>
+                      <strong>{currentBlock.name || `Bloque ${draftBlockLabel}`}</strong>
+                    </div>
+                    <span className="preview-block-properties">
+                      {buildBlockProperties(currentBlock) || "Completa las propiedades del bloque"}
+                    </span>
+                  </div>
+
+                  <div className="preview-exercise-list">
+                    {draftBlockExercises.length > 0 ? (
+                      draftBlockExercises.map((exercise, exerciseIndex) => (
+                        <div className="preview-exercise-row" key={`draft-preview-${exerciseIndex}`}>
+                          <div>
                             <span className="preview-exercise-index">
-                              Ejercicio {exerciseIndex + 1}
+                              {exerciseIndex < currentBlock.exercises.length
+                                ? `Ejercicio ${exerciseIndex + 1}`
+                                : "Ejercicio en edicion"}
                             </span>
                             <strong>{exercise.name || "Ejercicio pendiente"}</strong>
                           </div>
@@ -734,10 +851,33 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
                           </span>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                      ))
+                    ) : (
+                      <div className="preview-exercise-row">
+                        <div>
+                          <span className="preview-exercise-index">Ejercicio en edicion</span>
+                          <strong>{currentExercise.name || "Ejercicio pendiente"}</strong>
+                        </div>
+                        <span className="preview-exercise-properties">
+                          {buildExerciseProperties(currentExercise) || "Define objetivo o cargas"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  className="primary-button"
+                  disabled={submittingWorkout}
+                  onClick={() => void handleCreateWorkout()}
+                  type="button"
+                >
+                  {submittingWorkout ? "Guardando..." : "Publicar WOD"}
+                </button>
+                {workoutMessage ? <span className="success-message">{workoutMessage}</span> : null}
+                {workoutError ? <span className="error-message">{workoutError}</span> : null}
               </div>
             </div>
           </aside>

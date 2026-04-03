@@ -661,11 +661,23 @@ button {
   gap: 10px;
 }
 
+.preview-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .preview-block-properties,
 .preview-exercise-index,
 .preview-exercise-properties {
   color: var(--muted);
   line-height: 1.5;
+}
+
+.preview-block-card.is-draft {
+  opacity: 0.92;
 }
 
 .preview-exercise-list {
@@ -690,6 +702,13 @@ button {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.workout-block-card p,
+.workout-exercise-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .field-grid {
