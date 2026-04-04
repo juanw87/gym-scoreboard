@@ -614,6 +614,57 @@ button {
   gap: 22px;
 }
 
+.panel-tabs {
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px;
+  margin-bottom: 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-button {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.tab-button.is-active {
+  background: var(--brand);
+  color: #000000;
+}
+
+.tab-button:hover {
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.workout-photo-card,
+.upload-meta {
+  display: grid;
+  gap: 14px;
+}
+
+.upload-field input[type="file"] {
+  padding: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.upload-meta p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .workout-preview-panel {
   position: sticky;
   top: 24px;

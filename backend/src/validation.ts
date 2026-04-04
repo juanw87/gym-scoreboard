@@ -34,12 +34,12 @@ const workoutBlockSchema = z
   .object({
     name: normalizedString.min(1),
     type: z.enum(["for_time", "amrap", "emon", "tabata"]),
-    rounds: z.number().int().positive(),
+    rounds: z.number().int().positive().default(1),
     timeCap: normalizedString.min(1),
     exercises: z.array(workoutExerciseSchema).min(1)
   })
   .superRefine((block, context) => {
-    if (block.type === "emon" || block.type === "tabata") {
+    if (block.type === "tabata") {
       block.exercises.forEach((exercise, index) => {
         if (exercise.targetType !== "time_cap") {
           context.addIssue({
@@ -71,6 +71,10 @@ export const submitWorkoutScoreSchema = z.object({
   scoreDisplay: normalizedString.min(1),
   scoreValue: z.number(),
   note: normalizedString.optional()
+});
+
+export const extractWorkoutImageSchema = z.object({
+  imageDataUrl: normalizedString.min(1)
 });
 
 export const loginSchema = z.object({

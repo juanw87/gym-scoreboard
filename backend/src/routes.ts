@@ -7,6 +7,7 @@ import {
 } from "./controllers/dashboard-controller";
 import { getHealth } from "./controllers/health-controller";
 import { getProfileController, updateProfileController } from "./controllers/profile-controller";
+import { extractWorkoutImageController } from "./controllers/workout-image-controller";
 import {
   createWorkoutController,
   submitWorkoutScoreController
@@ -23,4 +24,5 @@ router.put("/profile/:athleteId", updateProfileController);
 router.get("/athletes", getAthletesController);
 router.get("/athletes/:id", getAthleteDetailController);
 router.post("/workouts", createWorkoutController);
+router.post("/workouts/extract-image", extractWorkoutImageController);
 router.post("/workouts/:workoutId/scores", submitWorkoutScoreController);

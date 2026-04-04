@@ -98,6 +98,16 @@ export type NewWorkoutPayload = {
   }[];
 };
 
+export type ExtractWorkoutImagePayload = {
+  imageDataUrl: string;
+};
+
+export type ExtractWorkoutImageResponse = {
+  workoutDate: string;
+  blocks: NewWorkoutBlockPayload[];
+  usedFallbackDate: boolean;
+};
+
 export type SubmitWorkoutScorePayload = {
   scoreDisplay: string;
   scoreValue: number;

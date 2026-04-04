@@ -6,6 +6,8 @@ import { apiFetch } from "@/lib/api";
 import { buildAuthHeaders, type AuthSession } from "@/lib/auth";
 import type {
   DashboardResponse,
+  ExtractWorkoutImagePayload,
+  ExtractWorkoutImageResponse,
   NewWorkoutPayload,
   ScoreInput,
   SubmitWorkoutScorePayload,
@@ -35,6 +37,8 @@ type WorkoutFormState = {
   workoutDate: string;
   blocks: WorkoutBlockForm[];
 };
+
+type WorkoutInputMode = "manual" | "photo";
 
 function labelWorkoutType(type: WorkoutBlockType) {
   switch (type) {
@@ -140,6 +144,49 @@ function createEmptyBlock(type: WorkoutBlockType = "for_time"): WorkoutBlockForm
   };
 }
 
+function mapPayloadExerciseToForm(exercise: NewWorkoutPayload["blocks"][number]["exercises"][number]) {
+  return {
+    name: exercise.name,
+    targetType: exercise.targetType,
+    reps: exercise.reps?.toString() ?? "",
+    timeCap: exercise.timeCap ?? "",
+    weightMen: exercise.weightMen ?? "",
+    weightWomen: exercise.weightWomen ?? "",
+    percentRm: exercise.percentRm ?? ""
+  } satisfies WorkoutExerciseForm;
+}
+
+function mapPayloadBlockToForm(block: NewWorkoutPayload["blocks"][number]) {
+  return {
+    name: block.name,
+    type: block.type,
+    rounds: block.rounds.toString(),
+    timeCap: block.timeCap,
+    exercises: block.exercises.map(mapPayloadExerciseToForm)
+  } satisfies WorkoutBlockForm;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("No se pudo leer la imagen seleccionada."));
+    };
+
+    reader.onerror = () => {
+      reject(new Error("No se pudo leer la imagen seleccionada."));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 const initialWorkoutForm: WorkoutFormState = {
   workoutDate: "",
   blocks: []
@@ -153,10 +200,12 @@ const initialScoreForm: ScoreInput = {
 };
 
 export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession }) {
+  const [workoutInputMode, setWorkoutInputMode] = useState<WorkoutInputMode>("manual");
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submittingWorkout, setSubmittingWorkout] = useState(false);
+  const [extractingWorkoutImage, setExtractingWorkoutImage] = useState(false);
   const [submittingScore, setSubmittingScore] = useState(false);
   const [workoutMessage, setWorkoutMessage] = useState<string | null>(null);
   const [scoreMessage, setScoreMessage] = useState<string | null>(null);
@@ -165,6 +214,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
   const [workoutForm, setWorkoutForm] = useState(initialWorkoutForm);
   const [currentBlock, setCurrentBlock] = useState<WorkoutBlockForm>(createEmptyBlock());
   const [currentExercise, setCurrentExercise] = useState<WorkoutExerciseForm>(createEmptyExercise());
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [scoreForm, setScoreForm] = useState<ScoreInput>(initialScoreForm);
 
   async function loadDashboard() {
@@ -330,6 +380,46 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
     }));
   }
 
+  async function handleExtractWorkoutFromPhoto(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedPhoto) {
+      setWorkoutError("Selecciona una foto del WOD antes de procesarla.");
+      setWorkoutMessage(null);
+      return;
+    }
+
+    setExtractingWorkoutImage(true);
+    setWorkoutMessage(null);
+    setWorkoutError(null);
+
+    try {
+      const imageDataUrl = await readFileAsDataUrl(selectedPhoto);
+      const payload: ExtractWorkoutImagePayload = { imageDataUrl };
+      const extractedWorkout = await apiFetch<ExtractWorkoutImageResponse>("/api/workouts/extract-image", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      setWorkoutForm({
+        workoutDate: extractedWorkout.workoutDate,
+        blocks: extractedWorkout.blocks.map(mapPayloadBlockToForm)
+      });
+      resetCurrentBlock();
+      setWorkoutMessage(
+        extractedWorkout.usedFallbackDate
+          ? "La foto fue procesada. No se detecto fecha y se uso la fecha de hoy en la vista previa."
+          : "La foto fue procesada. Revisa la vista previa y publica el WOD si esta correcto."
+      );
+    } catch (requestError) {
+      setWorkoutError(
+        requestError instanceof Error ? requestError.message : "No se pudo procesar la foto del WOD."
+      );
+    } finally {
+      setExtractingWorkoutImage(false);
+    }
+  }
+
   async function handleCreateWorkout() {
     if (!workoutForm.workoutDate.trim()) {
       setWorkoutError("Completa la fecha del WOD antes de publicarlo.");
@@ -441,7 +531,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
   }
 
   const previewWorkoutType = deriveWorkoutType(
-    workoutForm.blocks.length > 0 ? workoutForm.blocks : [currentBlock]
+    workoutForm.blocks.length > 0
+      ? workoutForm.blocks
+      : workoutInputMode === "manual"
+        ? [currentBlock]
+        : []
   );
   const previewBlocks = [...workoutForm.blocks];
   const currentExerciseHasData =
@@ -467,8 +561,8 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
           <p className="eyebrow">Carga</p>
           <h1>Publica el WOD y revisa la vista previa en tiempo real.</h1>
           <p className="hero-copy">
-            Completa el bloque en edicion, agrega sus ejercicios uno por uno y luego incorpora el
-            bloque a la vista previa. Publica el WOD final desde el panel lateral.
+            Puedes armar el WOD manualmente o subir una foto para que la IA reconstruya bloques y
+            ejercicios antes de publicar.
           </p>
         </div>
       </section>
@@ -479,28 +573,54 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Carga</p>
-                <h2>Armar WOD del dia</h2>
+                <h2>{workoutInputMode === "manual" ? "Armar WOD del dia" : "Subir foto del WOD"}</h2>
               </div>
-              <span className="panel-caption">Fecha, bloque actual y ejercicio actual</span>
+              <span className="panel-caption">
+                {workoutInputMode === "manual"
+                  ? "Fecha, bloque actual y ejercicio actual"
+                  : "Carga una imagen y deja que la IA prepare la vista previa"}
+              </span>
             </div>
 
-            <div className="workout-form">
-              <label>
-                <span>Fecha</span>
-                <input
-                  onChange={(event) =>
-                    setWorkoutForm((current) => ({
-                      ...current,
-                      workoutDate: event.target.value
-                    }))
-                  }
-                  required
-                  type="date"
-                  value={workoutForm.workoutDate}
-                />
-              </label>
+            <div className="panel-tabs" role="tablist" aria-label="Modo de carga de WOD">
+              <button
+                aria-selected={workoutInputMode === "manual"}
+                className={workoutInputMode === "manual" ? "tab-button is-active" : "tab-button"}
+                onClick={() => setWorkoutInputMode("manual")}
+                role="tab"
+                type="button"
+              >
+                Formulario
+              </button>
+              <button
+                aria-selected={workoutInputMode === "photo"}
+                className={workoutInputMode === "photo" ? "tab-button is-active" : "tab-button"}
+                onClick={() => setWorkoutInputMode("photo")}
+                role="tab"
+                type="button"
+              >
+                Subir foto
+              </button>
+            </div>
 
-              <section className="workout-block-card">
+            {workoutInputMode === "manual" ? (
+              <div className="workout-form">
+                <label>
+                  <span>Fecha</span>
+                  <input
+                    onChange={(event) =>
+                      setWorkoutForm((current) => ({
+                        ...current,
+                        workoutDate: event.target.value
+                      }))
+                    }
+                    required
+                    type="date"
+                    value={workoutForm.workoutDate}
+                  />
+                </label>
+
+                <section className="workout-block-card">
                 <div className="form-section-header">
                   <div>
                     <span className="card-label">Bloque en edicion</span>
@@ -755,8 +875,41 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                     />
                   </label>
                 </div>
-              </section>
-            </div>
+
+                </section>
+              </div>
+            ) : (
+              <form className="workout-form" onSubmit={(event) => void handleExtractWorkoutFromPhoto(event)}>
+                <section className="workout-photo-card">
+                  <div className="form-section-header">
+                    <div>
+                      <span className="card-label">Foto del WOD</span>
+                      <p>Sube una imagen clara. La IA va a reconstruir bloques y ejercicios.</p>
+                    </div>
+                  </div>
+
+                  <label className="upload-field">
+                    <span>Imagen</span>
+                    <input
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(event) => setSelectedPhoto(event.target.files?.[0] ?? null)}
+                      type="file"
+                    />
+                  </label>
+
+                  <div className="upload-meta">
+                    <strong>{selectedPhoto?.name ?? "Todavia no seleccionaste una imagen."}</strong>
+                    <p>Formatos permitidos: PNG, JPG o WEBP.</p>
+                  </div>
+
+                  <div className="form-actions">
+                    <button className="primary-button" disabled={extractingWorkoutImage} type="submit">
+                      {extractingWorkoutImage ? "Procesando..." : "Procesar foto"}
+                    </button>
+                  </div>
+                </section>
+              </form>
+            )}
           </article>
 
           <aside className="panel workout-preview-panel">
@@ -765,7 +918,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                 <p className="eyebrow">Vista previa</p>
                 <h2>WOD en vivo</h2>
               </div>
-              <span className="panel-caption">Se actualiza mientras completas la carga</span>
+              <span className="panel-caption">
+                {workoutInputMode === "manual"
+                  ? "Se actualiza mientras completas la carga"
+                  : "Valida la extraccion antes de publicar"}
+              </span>
             </div>
 
             <div className="workout-preview-shell">
@@ -775,6 +932,20 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
               </div>
 
               <div className="workout-preview-list">
+                {previewBlocks.length === 0 && workoutInputMode === "photo" ? (
+                  <section className="preview-block-card">
+                    <div className="preview-block-heading">
+                      <div>
+                        <span className="card-label">Pendiente</span>
+                        <strong>Sube una foto para generar la vista previa</strong>
+                      </div>
+                      <span className="preview-block-properties">
+                        La extraccion cargara aqui la estructura del WOD.
+                      </span>
+                    </div>
+                  </section>
+                ) : null}
+
                 {previewBlocks.map((block, blockIndex) => (
                   <section className="preview-block-card" key={`preview-block-${blockIndex}`}>
                     <div className="preview-block-heading">
@@ -786,13 +957,15 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                         <span className="preview-block-properties">
                           {buildBlockProperties(block) || "Completa las propiedades del bloque"}
                         </span>
-                        <button
-                          className="ghost-button button-with-icon"
-                          onClick={() => handleRemoveBlock(blockIndex)}
-                          type="button"
-                        >
-                          -                          
-                        </button>
+                        {workoutInputMode === "manual" ? (
+                          <button
+                            className="ghost-button button-with-icon"
+                            onClick={() => handleRemoveBlock(blockIndex)}
+                            type="button"
+                          >
+                            -
+                          </button>
+                        ) : null}
                       </div>
                     </div>
 
@@ -810,13 +983,15 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             <span className="preview-exercise-properties">
                               {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
                             </span>
-                            <button
-                              className="ghost-button"
-                              onClick={() => handleRemoveBlockExercise(blockIndex, exerciseIndex)}
-                              type="button"
-                            >
-                              -
-                            </button>
+                            {workoutInputMode === "manual" ? (
+                              <button
+                                className="ghost-button"
+                                onClick={() => handleRemoveBlockExercise(blockIndex, exerciseIndex)}
+                                type="button"
+                              >
+                                -
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       ))}
@@ -824,53 +999,55 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                   </section>
                 ))}
 
-                <section className="preview-block-card is-draft">
-                  <div className="preview-block-heading">
-                    <div>
-                      <span className="card-label">Bloque {draftBlockLabel}</span>
-                      <strong>{currentBlock.name || `Bloque ${draftBlockLabel}`}</strong>
+                {workoutInputMode === "manual" ? (
+                  <section className="preview-block-card is-draft">
+                    <div className="preview-block-heading">
+                      <div>
+                        <span className="card-label">Bloque {draftBlockLabel}</span>
+                        <strong>{currentBlock.name || `Bloque ${draftBlockLabel}`}</strong>
+                      </div>
+                      <span className="preview-block-properties">
+                        {buildBlockProperties(currentBlock) || "Completa las propiedades del bloque"}
+                      </span>
                     </div>
-                    <span className="preview-block-properties">
-                      {buildBlockProperties(currentBlock) || "Completa las propiedades del bloque"}
-                    </span>
-                  </div>
 
-                  <div className="preview-exercise-list">
-                    {draftBlockExercises.length > 0 ? (
-                      draftBlockExercises.map((exercise, exerciseIndex) => (
-                        <div className="preview-exercise-row" key={`draft-preview-${exerciseIndex}`}>
-                          <div>
-                            <span className="preview-exercise-index">
-                              {exerciseIndex < currentBlock.exercises.length
-                                ? `Ejercicio ${exerciseIndex + 1}`
-                                : "Ejercicio en edicion"}
+                    <div className="preview-exercise-list">
+                      {draftBlockExercises.length > 0 ? (
+                        draftBlockExercises.map((exercise, exerciseIndex) => (
+                          <div className="preview-exercise-row" key={`draft-preview-${exerciseIndex}`}>
+                            <div>
+                              <span className="preview-exercise-index">
+                                {exerciseIndex < currentBlock.exercises.length
+                                  ? `Ejercicio ${exerciseIndex + 1}`
+                                  : "Ejercicio en edicion"}
+                              </span>
+                              <strong>{exercise.name || "Ejercicio pendiente"}</strong>
+                            </div>
+                            <span className="preview-exercise-properties">
+                              {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
                             </span>
-                            <strong>{exercise.name || "Ejercicio pendiente"}</strong>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="preview-exercise-row">
+                          <div>
+                            <span className="preview-exercise-index">Ejercicio en edicion</span>
+                            <strong>{currentExercise.name || "Ejercicio pendiente"}</strong>
                           </div>
                           <span className="preview-exercise-properties">
-                            {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
+                            {buildExerciseProperties(currentExercise) || "Define objetivo o cargas"}
                           </span>
                         </div>
-                      ))
-                    ) : (
-                      <div className="preview-exercise-row">
-                        <div>
-                          <span className="preview-exercise-index">Ejercicio en edicion</span>
-                          <strong>{currentExercise.name || "Ejercicio pendiente"}</strong>
-                        </div>
-                        <span className="preview-exercise-properties">
-                          {buildExerciseProperties(currentExercise) || "Define objetivo o cargas"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </section>
+                      )}
+                    </div>
+                  </section>
+                ) : null}
               </div>
 
               <div className="form-actions">
                 <button
                   className="primary-button"
-                  disabled={submittingWorkout}
+                  disabled={submittingWorkout || extractingWorkoutImage}
                   onClick={() => void handleCreateWorkout()}
                   type="button"
                 >
