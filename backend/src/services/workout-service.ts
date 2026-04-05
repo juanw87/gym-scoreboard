@@ -40,7 +40,9 @@ function buildWorkoutDescription(blocks: CreateWorkoutInput["blocks"]) {
           const target =
             exercise.targetType === "reps"
               ? `${exercise.reps} reps`
-              : `time cap ${exercise.timeCap}`;
+              : [exercise.reps ? `${exercise.reps} reps` : null, `time cap ${exercise.timeCap}`]
+                  .filter(Boolean)
+                  .join(" / ");
 
           const loads = [
             exercise.weightMen ? `H ${exercise.weightMen}` : null,

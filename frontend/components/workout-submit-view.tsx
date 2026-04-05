@@ -59,6 +59,10 @@ function requiresBlockTimeCap(type: WorkoutBlockType) {
   return type === "emon" || type === "tabata";
 }
 
+function allowsRepsWithTimeCap(type: WorkoutBlockType) {
+  return type !== "tabata";
+}
+
 function blockUsesRounds(type: WorkoutBlockType) {
   return type === "for_time";
 }
@@ -103,15 +107,14 @@ function buildBlockProperties(block: WorkoutBlockForm) {
   return properties.filter(Boolean).join(" | ");
 }
 
-function buildExerciseProperties(exercise: WorkoutExerciseForm) {
-  const target =
-    exercise.targetType === "reps"
-      ? exercise.reps
-        ? `${exercise.reps} reps`
-        : null
-      : exercise.timeCap
-        ? `TC ${exercise.timeCap}`
-        : null;
+function buildExerciseProperties(exercise: WorkoutExerciseForm, blockType?: WorkoutBlockType) {
+  const shouldShowTimeCap =
+    exercise.targetType === "time_cap" || blockType === "emon" || blockType === "tabata";
+
+  const targets = [
+    exercise.reps ? `${exercise.reps} reps` : null,
+    shouldShowTimeCap && exercise.timeCap ? `TC ${exercise.timeCap}` : null
+  ];
 
   const loads = [
     exercise.weightMen ? `H ${exercise.weightMen}` : null,
@@ -119,7 +122,7 @@ function buildExerciseProperties(exercise: WorkoutExerciseForm) {
     exercise.percentRm ? `%RM ${exercise.percentRm}` : null
   ];
 
-  return [target, ...loads].filter(Boolean).join(" | ");
+  return [...targets, ...loads].filter(Boolean).join(" | ");
 }
 
 function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): WorkoutExerciseForm {
@@ -272,8 +275,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
       requiresBlockTimeCap(nextType)
         ? {
             ...current,
-            targetType: "time_cap",
-            reps: ""
+            targetType: "time_cap"
           }
         : current
     );
@@ -444,10 +446,10 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
         type: block.type,
         rounds: Number(block.rounds),
         timeCap: block.timeCap,
-        exercises: block.exercises.map((exercise) => ({
+      exercises: block.exercises.map((exercise) => ({
           name: exercise.name,
           targetType: exercise.targetType,
-          reps: exercise.targetType === "reps" ? Number(exercise.reps) : undefined,
+          reps: exercise.reps.trim() ? Number(exercise.reps) : undefined,
           timeCap: exercise.targetType === "time_cap" ? exercise.timeCap : undefined,
           weightMen: exercise.weightMen,
           weightWomen: exercise.weightWomen,
@@ -725,7 +727,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                         </div>
                         <div>
                           <strong>{exercise.name}</strong>
-                          <p>{buildExerciseProperties(exercise) || "Sin propiedades"}</p>
+                          <p>{buildExerciseProperties(exercise, currentBlock.type) || "Sin propiedades"}</p>
                         </div>
                       </div>
                     ))}
@@ -739,7 +741,9 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                     <span className="card-label">Ejercicio en edicion</span>
                     <p>
                       {requiresBlockTimeCap(currentBlock.type)
-                        ? "Este bloque usa ejercicios por time cap."
+                        ? allowsRepsWithTimeCap(currentBlock.type)
+                          ? "Este bloque usa ejercicios por time cap y puede incluir repeticiones."
+                          : "Este bloque usa ejercicios por time cap."
                         : "Completa un ejercicio y agregalo al bloque actual."}
                     </p>
                   </div>
@@ -765,20 +769,39 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                   </label>
 
                   {requiresBlockTimeCap(currentBlock.type) ? (
-                    <label>
-                      <span>Time Cap</span>
-                      <input
-                        onChange={(event) =>
-                          updateCurrentExercise((current) => ({
-                            ...current,
-                            timeCap: event.target.value
-                          }))
-                        }
-                        placeholder="00:20"
-                        required
-                        value={currentExercise.timeCap}
-                      />
-                    </label>
+                    <>
+                      {allowsRepsWithTimeCap(currentBlock.type) ? (
+                        <label>
+                          <span>Repeticiones</span>
+                          <input
+                            min="1"
+                            onChange={(event) =>
+                              updateCurrentExercise((current) => ({
+                                ...current,
+                                reps: event.target.value
+                              }))
+                            }
+                            placeholder="15"
+                            type="number"
+                            value={currentExercise.reps}
+                          />
+                        </label>
+                      ) : null}
+                      <label>
+                        <span>Time Cap</span>
+                        <input
+                          onChange={(event) =>
+                            updateCurrentExercise((current) => ({
+                              ...current,
+                              timeCap: event.target.value
+                            }))
+                          }
+                          placeholder="00:20"
+                          required
+                          value={currentExercise.timeCap}
+                        />
+                      </label>
+                    </>
                   ) : (
                     <>
                       <label>
@@ -788,7 +811,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             updateCurrentExercise((current) => ({
                               ...current,
                               targetType: event.target.value as WorkoutExerciseTargetType,
-                              reps: event.target.value === "reps" ? current.reps : "",
+                              reps: current.reps,
                               timeCap: event.target.value === "time_cap" ? current.timeCap : ""
                             }))
                           }
@@ -817,20 +840,37 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                           />
                         </label>
                       ) : (
-                        <label>
-                          <span>Time Cap</span>
-                          <input
-                            onChange={(event) =>
-                              updateCurrentExercise((current) => ({
-                                ...current,
-                                timeCap: event.target.value
-                              }))
-                            }
-                            placeholder="01:00"
-                            required
-                            value={currentExercise.timeCap}
-                          />
-                        </label>
+                        <>
+                          <label>
+                            <span>Repeticiones</span>
+                            <input
+                              min="1"
+                              onChange={(event) =>
+                                updateCurrentExercise((current) => ({
+                                  ...current,
+                                  reps: event.target.value
+                                }))
+                              }
+                              placeholder="15"
+                              type="number"
+                              value={currentExercise.reps}
+                            />
+                          </label>
+                          <label>
+                            <span>Time Cap</span>
+                            <input
+                              onChange={(event) =>
+                                updateCurrentExercise((current) => ({
+                                  ...current,
+                                  timeCap: event.target.value
+                                }))
+                              }
+                              placeholder="01:00"
+                              required
+                              value={currentExercise.timeCap}
+                            />
+                          </label>
+                        </>
                       )}
                     </>
                   )}
@@ -981,7 +1021,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                           </div>
                           <div className="preview-inline-actions">
                             <span className="preview-exercise-properties">
-                              {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
+                              {buildExerciseProperties(exercise, block.type) || "Define objetivo o cargas"}
                             </span>
                             {workoutInputMode === "manual" ? (
                               <button
@@ -1024,7 +1064,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                               <strong>{exercise.name || "Ejercicio pendiente"}</strong>
                             </div>
                             <span className="preview-exercise-properties">
-                              {buildExerciseProperties(exercise) || "Define objetivo o cargas"}
+                              {buildExerciseProperties(exercise, currentBlock.type) || "Define objetivo o cargas"}
                             </span>
                           </div>
                         ))
@@ -1035,7 +1075,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             <strong>{currentExercise.name || "Ejercicio pendiente"}</strong>
                           </div>
                           <span className="preview-exercise-properties">
-                            {buildExerciseProperties(currentExercise) || "Define objetivo o cargas"}
+                            {buildExerciseProperties(currentExercise, currentBlock.type) || "Define objetivo o cargas"}
                           </span>
                         </div>
                       )}
