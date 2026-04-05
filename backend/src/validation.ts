@@ -35,18 +35,34 @@ const workoutBlockSchema = z
     name: normalizedString.min(1),
     type: z.enum(["for_time", "amrap", "emon", "tabata"]),
     rounds: z.number().int().positive().default(1),
-    timeCap: normalizedString.min(1),
+    timeCap: normalizedString.optional().default("no time cap"),
     exercises: z.array(workoutExerciseSchema).min(1)
   })
   .superRefine((block, context) => {
-    if (block.type === "tabata") {
-      block.exercises.forEach((exercise, index) => {
-        if (exercise.targetType !== "time_cap") {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["exercises", index, "targetType"],
-            message: "En este tipo de bloque el ejercicio debe medirse por time cap."
-          });
+    if (block.type === "for_time" && !block.timeCap) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["timeCap"],
+      message: "El time cap es obligatorio en bloques for_time."
+      });
+    }
+
+  if (block.type === "amrap" && !block.timeCap) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["timeCap"],
+      message: "El tiempo es obligatorio en AMRAP."
+      });
+    }
+
+  if (block.type === "tabata") {
+    block.exercises.forEach((exercise, index) => {
+      if (exercise.targetType !== "time_cap") {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["exercises", index, "targetType"],
+          message: "En tabata todos deben ser time_cap."
+        });
         }
       });
     }

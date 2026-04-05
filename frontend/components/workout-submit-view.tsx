@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { apiFetch } from "@/lib/api";
 import { buildAuthHeaders, type AuthSession } from "@/lib/auth";
 import type {
@@ -167,6 +169,17 @@ function mapPayloadBlockToForm(block: NewWorkoutPayload["blocks"][number]) {
     timeCap: block.timeCap,
     exercises: block.exercises.map(mapPayloadExerciseToForm)
   } satisfies WorkoutBlockForm;
+}
+
+function cloneExercise(exercise: WorkoutExerciseForm): WorkoutExerciseForm {
+  return { ...exercise };
+}
+
+function cloneBlock(block: WorkoutBlockForm): WorkoutBlockForm {
+  return {
+    ...block,
+    exercises: block.exercises.map(cloneExercise)
+  };
 }
 
 function readFileAsDataUrl(file: File) {
@@ -342,6 +355,22 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
     }));
   }
 
+  function handleEditDraftExercise(exerciseIndex: number) {
+    const exerciseToEdit = currentBlock.exercises[exerciseIndex];
+
+    if (!exerciseToEdit) {
+      return;
+    }
+
+    setCurrentExercise(cloneExercise(exerciseToEdit));
+    updateCurrentBlock((current) => ({
+      ...current,
+      exercises: current.exercises.filter((_, index) => index !== exerciseIndex)
+    }));
+    setWorkoutMessage(null);
+    setWorkoutError(null);
+  }
+
   function handleAddBlock() {
     const validationError = validateCurrentBlock();
 
@@ -366,6 +395,24 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
       ...current,
       blocks: current.blocks.filter((_, index) => index !== blockIndex)
     }));
+  }
+
+  function handleEditBlock(blockIndex: number) {
+    const blockToEdit = workoutForm.blocks[blockIndex];
+
+    if (!blockToEdit) {
+      return;
+    }
+
+    setCurrentBlock(cloneBlock(blockToEdit));
+    resetCurrentExercise(blockToEdit.type);
+    setWorkoutForm((current) => ({
+      ...current,
+      blocks: current.blocks.filter((_, index) => index !== blockIndex)
+    }));
+    setWorkoutInputMode("manual");
+    setWorkoutMessage("El bloque se movio al editor para que puedas ajustarlo.");
+    setWorkoutError(null);
   }
 
   function handleRemoveBlockExercise(blockIndex: number, exerciseIndex: number) {
@@ -408,10 +455,11 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
         blocks: extractedWorkout.blocks.map(mapPayloadBlockToForm)
       });
       resetCurrentBlock();
+      setWorkoutInputMode("manual");
       setWorkoutMessage(
         extractedWorkout.usedFallbackDate
-          ? "La foto fue procesada. No se detecto fecha y se uso la fecha de hoy en la vista previa."
-          : "La foto fue procesada. Revisa la vista previa y publica el WOD si esta correcto."
+          ? "La foto fue procesada. No se detecto fecha y se uso la fecha de hoy; ahora puedes editar la vista previa antes de publicar."
+          : "La foto fue procesada. Ahora puedes editar la vista previa antes de publicar el WOD."
       );
     } catch (requestError) {
       setWorkoutError(
@@ -628,8 +676,14 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                     <span className="card-label">Bloque en edicion</span>
                     <p>Completa el bloque y luego agregalo a la vista previa.</p>
                   </div>
-                  <button className="ghost-button button-with-icon" onClick={handleAddBlock} type="button">
-                    +
+                  <button
+                    aria-label="Agregar bloque"
+                    className="ghost-button button-with-icon icon-button"
+                    onClick={handleAddBlock}
+                    title="Agregar bloque"
+                    type="button"
+                  >
+                    <FontAwesomeIcon aria-hidden="true" icon={faPlus} />
                   </button>
                 </div>
 
@@ -718,11 +772,22 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             <span className="card-label">Ejercicio {exerciseIndex + 1}</span>
                           </div>
                           <button
-                            className="ghost-button button-with-icon"
-                            onClick={() => handleRemoveDraftExercise(exerciseIndex)}
+                            aria-label={`Editar ejercicio ${exerciseIndex + 1}`}
+                            className="ghost-button button-with-icon icon-button"
+                            onClick={() => handleEditDraftExercise(exerciseIndex)}
+                            title="Editar ejercicio"
                             type="button"
                           >
-                            <i className="fa fa-plus"></i>
+                            <FontAwesomeIcon aria-hidden="true" icon={faEdit} />
+                          </button>
+                          <button
+                            aria-label={`Eliminar ejercicio ${exerciseIndex + 1}`}
+                            className="ghost-button button-with-icon icon-button"
+                            onClick={() => handleRemoveDraftExercise(exerciseIndex)}
+                            title="Eliminar ejercicio"
+                            type="button"
+                          >
+                            <FontAwesomeIcon aria-hidden="true" icon={faTrash} />
                           </button>
                         </div>
                         <div>
@@ -747,8 +812,14 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                         : "Completa un ejercicio y agregalo al bloque actual."}
                     </p>
                   </div>
-                  <button className="ghost-button button-with-icon" onClick={handleAddExercise} type="button">
-                    +
+                  <button
+                    aria-label="Agregar ejercicio"
+                    className="ghost-button button-with-icon icon-button"
+                    onClick={handleAddExercise}
+                    title="Agregar ejercicio"
+                    type="button"
+                  >
+                    <FontAwesomeIcon aria-hidden="true" icon={faPlus} />
                   </button>
                 </div>
 
@@ -997,13 +1068,24 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                         <span className="preview-block-properties">
                           {buildBlockProperties(block) || "Completa las propiedades del bloque"}
                         </span>
+                        <button
+                          aria-label={`Editar bloque ${blockIndex + 1}`}
+                          className="ghost-button button-with-icon icon-button"
+                          onClick={() => handleEditBlock(blockIndex)}
+                          title="Editar bloque"
+                          type="button"
+                        >
+                          <FontAwesomeIcon aria-hidden="true" icon={faEdit} />
+                        </button>
                         {workoutInputMode === "manual" ? (
                           <button
-                            className="ghost-button button-with-icon"
+                            aria-label={`Eliminar bloque ${blockIndex + 1}`}
+                            className="ghost-button button-with-icon icon-button"
                             onClick={() => handleRemoveBlock(blockIndex)}
+                            title="Eliminar bloque"
                             type="button"
                           >
-                            -
+                            <FontAwesomeIcon aria-hidden="true" icon={faTrash} />
                           </button>
                         ) : null}
                       </div>
@@ -1025,11 +1107,13 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
                             </span>
                             {workoutInputMode === "manual" ? (
                               <button
-                                className="ghost-button"
+                                aria-label={`Eliminar ejercicio ${exerciseIndex + 1} del bloque ${blockIndex + 1}`}
+                                className="ghost-button button-with-icon icon-button"
                                 onClick={() => handleRemoveBlockExercise(blockIndex, exerciseIndex)}
+                                title="Eliminar ejercicio"
                                 type="button"
                               >
-                                -
+                                <FontAwesomeIcon aria-hidden="true" icon={faTrash} />
                               </button>
                             ) : null}
                           </div>
