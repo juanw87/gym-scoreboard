@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredSession, type AuthSession } from "@/lib/auth";
-import { WorkoutSubmitView } from "@/components/workout-submit-view";
+import { ScoreSubmitView } from "@/components/score-submit-view";
 
-export function WorkoutSubmitShell() {
+export function ScoreSubmitShell() {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
 
@@ -24,5 +24,5 @@ export function WorkoutSubmitShell() {
     return <main className="page-shell status-card">Validando acceso del atleta...</main>;
   }
 
-  return <WorkoutSubmitView />;
+  return <ScoreSubmitView currentUser={session} />;
 }

@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { apiFetch } from "@/lib/api";
-import { buildAuthHeaders, type AuthSession } from "@/lib/auth";
 import type {
-  DashboardResponse,
   ExtractWorkoutImagePayload,
   ExtractWorkoutImageResponse,
   NewWorkoutPayload,
-  ScoreInput,
-  SubmitWorkoutScorePayload,
   WorkoutBlockType,
   WorkoutExerciseTargetType
 } from "@/lib/types";
@@ -208,50 +204,16 @@ const initialWorkoutForm: WorkoutFormState = {
   blocks: []
 };
 
-const initialScoreForm: ScoreInput = {
-  athleteId: "",
-  scoreDisplay: "",
-  scoreValue: "",
-  note: ""
-};
-
-export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession }) {
+export function WorkoutSubmitView() {
   const [workoutInputMode, setWorkoutInputMode] = useState<WorkoutInputMode>("manual");
-  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [submittingWorkout, setSubmittingWorkout] = useState(false);
   const [extractingWorkoutImage, setExtractingWorkoutImage] = useState(false);
-  const [submittingScore, setSubmittingScore] = useState(false);
   const [workoutMessage, setWorkoutMessage] = useState<string | null>(null);
-  const [scoreMessage, setScoreMessage] = useState<string | null>(null);
   const [workoutError, setWorkoutError] = useState<string | null>(null);
-  const [scoreError, setScoreError] = useState<string | null>(null);
   const [workoutForm, setWorkoutForm] = useState(initialWorkoutForm);
   const [currentBlock, setCurrentBlock] = useState<WorkoutBlockForm>(createEmptyBlock());
   const [currentExercise, setCurrentExercise] = useState<WorkoutExerciseForm>(createEmptyExercise());
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
-  const [scoreForm, setScoreForm] = useState<ScoreInput>(initialScoreForm);
-
-  async function loadDashboard() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiFetch<DashboardResponse>("/api/dashboard");
-      setDashboard(response);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error ? requestError.message : "No se pudo cargar la pantalla."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadDashboard();
-  }, []);
 
   function resetCurrentExercise(nextBlockType: WorkoutBlockType = currentBlock.type) {
     setCurrentExercise(createEmptyExercise(requiresBlockTimeCap(nextBlockType) ? "time_cap" : "reps"));
@@ -517,8 +479,7 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
         workoutDate: current.workoutDate
       }));
       resetCurrentBlock();
-      setWorkoutMessage("WOD creado. Ahora cada atleta puede cargar su score por separado.");
-      await loadDashboard();
+      setWorkoutMessage("WOD creado. Ahora cada atleta puede cargar su score desde la pantalla dedicada.");
     } catch (requestError) {
       setWorkoutError(
         requestError instanceof Error ? requestError.message : "No se pudo crear el WOD."
@@ -526,58 +487,6 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
     } finally {
       setSubmittingWorkout(false);
     }
-  }
-
-  async function handleSubmitScore(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!dashboard?.featuredWorkout) {
-      setScoreError("Primero debes crear un WOD vigente.");
-      return;
-    }
-
-    setSubmittingScore(true);
-    setScoreMessage(null);
-    setScoreError(null);
-
-    const payload: SubmitWorkoutScorePayload = {
-      scoreDisplay: scoreForm.scoreDisplay,
-      scoreValue: Number(scoreForm.scoreValue),
-      note: scoreForm.note
-    };
-
-    try {
-      await apiFetch(`/api/workouts/${dashboard.featuredWorkout.id}/scores`, {
-        method: "POST",
-        headers: buildAuthHeaders(currentUser),
-        body: JSON.stringify(payload)
-      });
-
-      setScoreForm(initialScoreForm);
-      setScoreMessage("Tu score fue cargado para el WOD del dia.");
-      await loadDashboard();
-    } catch (requestError) {
-      setScoreError(
-        requestError instanceof Error ? requestError.message : "No se pudo cargar el score."
-      );
-    } finally {
-      setSubmittingScore(false);
-    }
-  }
-
-  if (loading) {
-    return <main className="page-shell status-card">Cargando pantalla de carga de WOD...</main>;
-  }
-
-  if (error) {
-    return (
-      <main className="page-shell status-card">
-        <p>{error}</p>
-        <button className="ghost-button" onClick={() => void loadDashboard()} type="button">
-          Reintentar
-        </button>
-      </main>
-    );
   }
 
   const previewWorkoutType = deriveWorkoutType(
@@ -614,6 +523,14 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
             Puedes armar el WOD manualmente o subir una foto para que la IA reconstruya bloques y
             ejercicios antes de publicar.
           </p>
+        </div>
+        <div className="highlight-card">
+          <span className="card-label">Siguiente paso</span>
+          <h2>La carga de score ahora vive en una pantalla separada.</h2>
+          <p>Publica el WOD aqui y luego entra a la vista dedicada para registrar resultados.</p>
+          <Link className="ghost-button link-button" href="/scores/new">
+            Ir a cargar score
+          </Link>
         </div>
       </section>
 
@@ -1183,102 +1100,6 @@ export function WorkoutSubmitView({ currentUser }: { currentUser: AuthSession })
             </div>
           </aside>
         </div>
-
-        <article className="panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Carga personal</p>
-              <h2>Subir mi score</h2>
-            </div>
-            <Link className="ghost-button link-button" href="/dashboard">
-              Volver al dashboard
-            </Link>
-          </div>
-
-          {dashboard?.featuredWorkout ? (
-            <form className="workout-form" onSubmit={(event) => void handleSubmitScore(event)}>
-              <div className="metric-grid">
-                <div>
-                  <span>WOD vigente</span>
-                  <strong>{dashboard.featuredWorkout.title}</strong>
-                </div>
-                <div>
-                  <span>Fecha</span>
-                  <strong>{dashboard.featuredWorkout.workoutDate}</strong>
-                </div>
-                <div>
-                  <span>Formato</span>
-                  <strong>{dashboard.featuredWorkout.workoutTypeLabel}</strong>
-                </div>
-                <div>
-                  <span>Scores actuales</span>
-                  <strong>{dashboard.featuredWorkout.scoreCount}</strong>
-                </div>
-              </div>
-
-              <label>
-                <span>Score visible</span>
-                <input
-                  onChange={(event) =>
-                    setScoreForm((current) => ({
-                      ...current,
-                      scoreDisplay: event.target.value
-                    }))
-                  }
-                  placeholder="14:28 o 212 reps"
-                  value={scoreForm.scoreDisplay}
-                />
-              </label>
-
-              <div className="field-grid">
-                <label>
-                  <span>Score numerico</span>
-                  <input
-                    min="0"
-                    onChange={(event) =>
-                      setScoreForm((current) => ({
-                        ...current,
-                        scoreValue: event.target.value
-                      }))
-                    }
-                    placeholder="868"
-                    required
-                    type="number"
-                    value={scoreForm.scoreValue}
-                  />
-                </label>
-
-                <label>
-                  <span>Nota</span>
-                  <input
-                    onChange={(event) =>
-                      setScoreForm((current) => ({
-                        ...current,
-                        note: event.target.value
-                      }))
-                    }
-                    placeholder="Escalado o sensaciones"
-                    value={scoreForm.note}
-                  />
-                </label>
-              </div>
-
-              <div className="form-actions">
-                <button className="primary-button" disabled={submittingScore} type="submit">
-                  {submittingScore ? "Guardando..." : "Subir score"}
-                </button>
-                {scoreMessage ? <span className="success-message">{scoreMessage}</span> : null}
-                {scoreError ? <span className="error-message">{scoreError}</span> : null}
-              </div>
-            </form>
-          ) : (
-            <div className="highlight-card">
-              <span className="card-label">WOD vigente</span>
-              <strong>No hay WOD vigente</strong>
-              <p>Publica primero el WOD del dia para que cada atleta pueda cargar su score.</p>
-            </div>
-          )}
-        </article>
       </section>
     </main>
   );

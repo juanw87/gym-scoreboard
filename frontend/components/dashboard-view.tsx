@@ -164,7 +164,12 @@ export function DashboardView({
 
             <Link className="side-nav-link" href="/workouts/new">
               <strong>Cargar WOD</strong>
-              <span>Ir a la pantalla dedicada para publicar el WOD y subir score.</span>
+              <span>Ir a la pantalla dedicada para publicar y editar el WOD.</span>
+            </Link>
+
+            <Link className="side-nav-link" href="/scores/new">
+              <strong>Cargar score</strong>
+              <span>Entrar a la pantalla dedicada para registrar resultados.</span>
             </Link>
           </nav>
 
@@ -196,6 +201,9 @@ export function DashboardView({
                   </p>
                   <Link className="ghost-button link-button" href="/workouts/new">
                     Ir a cargar WOD
+                  </Link>
+                  <Link className="ghost-button link-button" href="/scores/new">
+                    Ir a cargar score
                   </Link>
                 </div>
               </section>
