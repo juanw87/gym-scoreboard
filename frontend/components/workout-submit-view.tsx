@@ -273,6 +273,7 @@ export function WorkoutSubmitView() {
   }
 
   function validateCurrentBlock() {
+    console.log(currentBlock);
     if (!currentBlock.name.trim()) {
       return "Completa el nombre del bloque antes de agregarlo.";
     }
@@ -350,6 +351,7 @@ export function WorkoutSubmitView() {
 
     setWorkoutError(null);
     resetCurrentBlock();
+
   }
 
   function handleRemoveBlock(blockIndex: number) {
