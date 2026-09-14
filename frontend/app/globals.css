@@ -845,6 +845,53 @@ button {
   grid-column: span 2;
 }
 
+.workout-form label.checkbox-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.workout-form label.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.workout-form label.checkbox-field input[type="checkbox"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.workout-form label.checkbox-field:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.workout-form label.checkbox-field span {
+  display: inline;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.checkbox-row .checkbox-field {
+  flex: 0 0 auto;
+}
+
 .workout-form input,
 .workout-form select,
 .workout-form textarea {

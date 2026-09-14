@@ -15,9 +15,10 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "sourceMap": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
+    // Configuración moderna para alias de rutas (reemplaza a baseUrl)
     "paths": {
       "@/*": [
         "./*"

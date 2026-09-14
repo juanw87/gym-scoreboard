@@ -1,20 +1,67 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Program",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}\\frontend\\components\\workout-submit-view.tsx",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Backend: Debug API (tsx watch + inspect)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx", "watch", "--inspect=9230", "backend/src/index.ts"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
+      "outFiles": ["${workspaceFolder}/backend/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "NODE_OPTIONS": "--enable-source-maps"
+      }
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Backend: Attach to tsx (port 9230)",
+      "port": 9230,
+      "restart": true,
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
+      "outFiles": ["${workspaceFolder}/backend/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Frontend: Next.js server (Node)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:web"],
+      "console": "integratedTerminal",
+      "port": 9229,
+      "env": {
+        "NODE_OPTIONS": "--inspect"
+      },
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Frontend: Chrome client",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${webRoot}/*",
+        "webpack://gym-scoreboard/frontend/*": "${webRoot}/*"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Backend + Frontend",
+      "configurations": ["Backend: Debug API (tsx watch + inspect)", "Frontend: Next.js server (Node)"],
+      "stopAll": true
+    }
+  ]
 }

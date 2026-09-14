@@ -21,6 +21,8 @@ type WorkoutExerciseForm = {
   weightMen: string;
   weightWomen: string;
   percentRm: string;
+  isBodyweight: boolean;
+  isPercentRm: boolean;
 };
 
 type WorkoutBlockForm = {
@@ -114,11 +116,13 @@ function buildExerciseProperties(exercise: WorkoutExerciseForm, blockType?: Work
     shouldShowTimeCap && exercise.timeCap ? `TC ${exercise.timeCap}` : null
   ];
 
-  const loads = [
-    exercise.weightMen ? `H ${exercise.weightMen}` : null,
-    exercise.weightWomen ? `M ${exercise.weightWomen}` : null,
-    exercise.percentRm ? `%RM ${exercise.percentRm}` : null
-  ];
+  const loads = exercise.isBodyweight
+    ? []
+    : [
+        exercise.weightMen ? `H ${exercise.weightMen}` : null,
+        exercise.weightWomen ? `M ${exercise.weightWomen}` : null,
+        exercise.percentRm ? `%RM ${exercise.percentRm}` : null
+      ];
 
   return [...targets, ...loads].filter(Boolean).join(" | ");
 }
@@ -131,7 +135,9 @@ function createEmptyExercise(targetType: WorkoutExerciseTargetType = "reps"): Wo
     timeCap: "",
     weightMen: "",
     weightWomen: "",
-    percentRm: ""
+    percentRm: "",
+    isBodyweight: false,
+    isPercentRm: false
   };
 }
 
@@ -153,7 +159,9 @@ function mapPayloadExerciseToForm(exercise: NewWorkoutPayload["blocks"][number][
     timeCap: exercise.timeCap ?? "",
     weightMen: exercise.weightMen ?? "",
     weightWomen: exercise.weightWomen ?? "",
-    percentRm: exercise.percentRm ?? ""
+    percentRm: exercise.percentRm ?? "",
+    isBodyweight: false,
+    isPercentRm: !!exercise.percentRm
   } satisfies WorkoutExerciseForm;
 }
 
@@ -434,14 +442,14 @@ export function WorkoutSubmitView() {
     }
   }
 
-  async function handleCreateWorkout() {
+async function handleCreateWorkout() {
     if (!workoutForm.workoutDate.trim()) {
       setWorkoutError("Completa la fecha del WOD antes de publicarlo.");
       setWorkoutMessage(null);
       return;
     }
 
-    if (workoutForm.blocks.length === 0) {
+    if (workoutForm.blocks.length === 0 && !currentBlock.name.trim()) {
       setWorkoutError("Agrega al menos un bloque a la vista previa antes de publicar el WOD.");
       setWorkoutMessage(null);
       return;
@@ -451,21 +459,25 @@ export function WorkoutSubmitView() {
     setWorkoutMessage(null);
     setWorkoutError(null);
 
+    const allBlocks = workoutForm.blocks.length > 0
+      ? workoutForm.blocks
+      : [currentBlock];
+
     const payload: NewWorkoutPayload = {
       workoutDate: workoutForm.workoutDate,
-      blocks: workoutForm.blocks.map((block) => ({
+      blocks: allBlocks.map((block) => ({
         name: block.name,
         type: block.type,
         rounds: Number(block.rounds),
         timeCap: block.timeCap,
-      exercises: block.exercises.map((exercise) => ({
+        exercises: block.exercises.map((exercise) => ({
           name: exercise.name,
           targetType: exercise.targetType,
           reps: exercise.reps.trim() ? Number(exercise.reps) : undefined,
           timeCap: exercise.targetType === "time_cap" ? exercise.timeCap : undefined,
-          weightMen: exercise.weightMen,
-          weightWomen: exercise.weightWomen,
-          percentRm: exercise.percentRm
+          weightMen: exercise.isBodyweight || exercise.isPercentRm ? undefined : exercise.weightMen || undefined,
+          weightWomen: exercise.isBodyweight || exercise.isPercentRm ? undefined : exercise.weightWomen || undefined,
+          percentRm: exercise.isBodyweight || !exercise.isPercentRm ? undefined : exercise.percentRm || undefined
         }))
       }))
     };
@@ -743,6 +755,42 @@ export function WorkoutSubmitView() {
                 </div>
 
                 <div className="field-grid">
+                  <div className="field-span-2 checkbox-row">
+                    <label className="checkbox-field">
+                      <input
+                        checked={currentExercise.isBodyweight}
+                        onChange={(event) =>
+                          updateCurrentExercise((current) => ({
+                            ...current,
+                            isBodyweight: event.target.checked,
+                            isPercentRm: event.target.checked ? false : current.isPercentRm,
+                            weightMen: event.target.checked ? "" : current.weightMen,
+                            weightWomen: event.target.checked ? "" : current.weightWomen,
+                            percentRm: event.target.checked ? "" : current.percentRm
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                      <span>Peso corporal</span>
+                    </label>
+                    <label className="checkbox-field">
+                      <input
+                        checked={currentExercise.isPercentRm}
+                        disabled={currentExercise.isBodyweight}
+                        onChange={(event) =>
+                          updateCurrentExercise((current) => ({
+                            ...current,
+                            isPercentRm: event.target.checked,
+                            weightMen: event.target.checked ? "" : current.weightMen,
+                            weightWomen: event.target.checked ? "" : current.weightWomen,
+                            percentRm: !event.target.checked ? "" : current.percentRm
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                      <span>% RM</span>
+                    </label>
+                  </div>
                   <label>
                     <span>Nombre</span>
                     <input
@@ -865,45 +913,54 @@ export function WorkoutSubmitView() {
                     </>
                   )}
 
-                  <label>
-                    <span>Peso Hombre</span>
-                    <input
-                      onChange={(event) =>
-                        updateCurrentExercise((current) => ({
-                          ...current,
-                          weightMen: event.target.value
-                        }))
-                      }
-                      placeholder="43/30 kg"
-                      value={currentExercise.weightMen}
-                    />
-                  </label>
-                  <label>
-                    <span>Peso Mujer</span>
-                    <input
-                      onChange={(event) =>
-                        updateCurrentExercise((current) => ({
-                          ...current,
-                          weightWomen: event.target.value
-                        }))
-                      }
-                      placeholder="30/20 kg"
-                      value={currentExercise.weightWomen}
-                    />
-                  </label>
-                  <label className="field-span-2">
-                    <span>% RM</span>
-                    <input
-                      onChange={(event) =>
-                        updateCurrentExercise((current) => ({
-                          ...current,
-                          percentRm: event.target.value
-                        }))
-                      }
-                      placeholder="75%"
-                      value={currentExercise.percentRm}
-                    />
-                  </label>
+                  
+
+                  {!currentExercise.isBodyweight && !currentExercise.isPercentRm && (
+                    <>
+                      <label>
+                        <span>Peso Hombre</span>
+                        <input
+                          onChange={(event) =>
+                            updateCurrentExercise((current) => ({
+                              ...current,
+                              weightMen: event.target.value
+                            }))
+                          }
+                          placeholder="43/30 kg"
+                          value={currentExercise.weightMen}
+                        />
+                      </label>
+                      <label>
+                        <span>Peso Mujer</span>
+                        <input
+                          onChange={(event) =>
+                            updateCurrentExercise((current) => ({
+                              ...current,
+                              weightWomen: event.target.value
+                            }))
+                          }
+                          placeholder="30/20 kg"
+                          value={currentExercise.weightWomen}
+                        />
+                      </label>
+                    </>
+                  )}
+
+                  {!currentExercise.isBodyweight && currentExercise.isPercentRm && (
+                    <label className="field-span-2">
+                      <span>% RM</span>
+                      <input
+                        onChange={(event) =>
+                          updateCurrentExercise((current) => ({
+                            ...current,
+                            percentRm: event.target.value
+                          }))
+                        }
+                        placeholder="75%"
+                        value={currentExercise.percentRm}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 </section>
