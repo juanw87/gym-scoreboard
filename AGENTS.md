@@ -61,10 +61,32 @@ Copy `.env` from `.env.example`. Must set:
 ```
 PORT=4000
 DATABASE_URL=postgres://postgres:postgres@localhost:55432/gym_scoreboard
+# Neon prod example:
+# DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
 CLIENT_URL=http://localhost:3000
+# Para prod con Vercel + Neon, permite múltiples orígenes:
+# CLIENT_URL=http://localhost:3000,https://tu-app.vercel.app
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+# En Vercel setear NEXT_PUBLIC_API_BASE_URL a URL del backend externo (ej. Render/Railway/Fly)
 OPENAI_API_KEY=sk-...            # REQUIRED for image extraction
 OPENAI_MODEL=gpt-4.1-mini
+```
+
+## Deploy
+
+### Opción A (actual) — Frontend en Vercel + DB Neon, Backend separado, dev local con concurrency
+
+- **Vercel**: `vercel.json` en root con `buildCommand: "npm run build:web"` y `outputDirectory: "frontend/.next"` (`framework: nextjs`). En Vercel Dashboard setear `NEXT_PUBLIC_API_BASE_URL` a URL del backend desplegado y `CLIENT_URL` si aplica. No tocar `docker-compose.yml`.
+- **Neon**: crear proyecto Neon, copiar `DATABASE_URL` con `?sslmode=require`. `backend/src/db.ts` detecta `neon.tech`/`sslmode=require`/`pooler.supabase.com` y activa `ssl: {rejectUnauthorized:false}` automáticamente.
+- **Backend prod**: desplegar `backend` en Render/Railway/Fly con `DATABASE_URL` de Neon + `CLIENT_URL` con origen de Vercel (`https://tu-app.vercel.app`) + `OPENAI_*`. Ejecutar `npm run db:migrate` apuntando a Neon una vez.
+- **Local**: sigue `docker compose up -d db && npm run dev` (concurrently `dev:web` + `dev:api`). `DATABASE_URL` local sigue apuntando a `localhost:55432`.
+
+### Comandos Vercel
+
+```bash
+vercel --prod                # deploy frontend
+vercel env add NEXT_PUBLIC_API_BASE_URL production
+vercel env add DATABASE_URL production # solo si centralizas, para preview no necesario
 ```
 
 ## Workflows

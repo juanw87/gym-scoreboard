@@ -33,9 +33,13 @@ function isDatabaseConnectionError(error: unknown) {
   );
 }
 
+const allowedOrigins = env.CLIENT_URL.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: env.CLIENT_URL
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins
   })
 );
 app.use(express.json({ limit: "12mb" }));
