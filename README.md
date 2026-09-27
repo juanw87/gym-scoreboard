@@ -8,6 +8,7 @@ MVP full-stack para boxes de crossfit y entrenamiento funcional. El proyecto usa
 - Guarda resultados historicos por atleta.
 - Muestra una vista de progreso individual con insights.
 - Permite cargar un nuevo WOD manualmente desde una interfaz de admin.
+- Permite cargar una foto del WOD y extraer su estructura con OpenAI antes de publicarlo.
 
 ## Stack
 
@@ -30,6 +31,7 @@ MVP full-stack para boxes de crossfit y entrenamiento funcional. El proyecto usa
 ## Variables de entorno
 
 Copiar `.env.example` a `.env`.
+Para la extraccion desde imagen es obligatorio definir `OPENAI_API_KEY`.
 
 ## Levantar el proyecto
 

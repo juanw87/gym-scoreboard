@@ -21,7 +21,7 @@ export async function insertWorkout(
     title: string;
     workoutDate: string;
     workoutType: string;
-    rankingOrder: string;
+    rankingOrder: "asc" | "desc";
     description: string;
     sourceImageUrl?: string;
   }

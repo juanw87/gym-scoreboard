@@ -411,6 +411,7 @@ button {
   line-height: 1.6;
   overflow-wrap: anywhere;
   word-break: break-word;
+  white-space: pre-line;
 }
 
 .metric-grid,
@@ -483,6 +484,13 @@ button {
 
 .submit-grid {
   align-items: start;
+  grid-template-columns: 1fr;
+}
+
+.workout-builder-layout {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
 }
 
 .panel {
@@ -603,7 +611,155 @@ button {
 
 .workout-form {
   display: grid;
+  gap: 22px;
+}
+
+.panel-tabs {
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px;
+  margin-bottom: 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-button {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.tab-button.is-active {
+  background: var(--brand);
+  color: #000000;
+}
+
+.tab-button:hover {
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.workout-photo-card,
+.upload-meta {
+  display: grid;
+  gap: 14px;
+}
+
+.upload-field input[type="file"] {
+  padding: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.upload-meta p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.workout-preview-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.workout-preview-shell,
+.workout-preview-list,
+.preview-exercise-list {
+  display: grid;
   gap: 18px;
+}
+
+.workout-preview-header {
+  padding-bottom: 4px;
+}
+
+.workout-preview-header strong,
+.preview-block-heading strong,
+.preview-exercise-row strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workout-preview-header strong {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.preview-block-card {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-block-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.preview-block-heading {
+  display: grid;
+  gap: 10px;
+}
+
+.preview-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-block-properties,
+.preview-exercise-index,
+.preview-exercise-properties {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.preview-block-card.is-draft {
+  opacity: 0.92;
+}
+
+.preview-exercise-list {
+  margin-top: 16px;
+}
+
+.preview-exercise-row {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-exercise-row:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.preview-exercise-index {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workout-block-card p,
+.workout-exercise-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .field-grid {
@@ -621,6 +777,119 @@ button {
   text-transform: uppercase;
   font-family: var(--font-title);
   letter-spacing: 0.02em;
+}
+
+.form-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.form-section-header.compact {
+  margin-bottom: 0;
+}
+
+.form-section-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.blocks-list,
+.exercise-list {
+  display: grid;
+  gap: 18px;
+}
+
+.workout-block-card,
+.workout-exercise-card {
+  display: grid;
+  gap: 14px;
+}
+
+.workout-block-card {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.workout-block-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.workout-exercise-card {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workout-exercise-card:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.workout-exercise-card .form-section-header {
+  align-items: baseline;
+}
+
+.workout-exercise-card .ghost-button,
+.workout-block-card .ghost-button {
+  padding: 10px 14px;
+}
+
+.workout-form .card-label {
+  display: inline-block;
+}
+
+.field-span-2 {
+  grid-column: span 2;
+}
+
+.workout-form label.checkbox-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.workout-form label.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.workout-form label.checkbox-field input[type="checkbox"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.workout-form label.checkbox-field:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.workout-form label.checkbox-field span {
+  display: inline;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.checkbox-row .checkbox-field {
+  flex: 0 0 auto;
 }
 
 .workout-form input,
@@ -687,16 +956,34 @@ button {
   color: var(--text);
 }
 
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  line-height: 1;
+}
+
+.button-with-icon svg {
+  flex: 0 0 auto;
+  display: block;
+  margin: 0 auto;
+  vertical-align: middle;
+}
+
 .icon-button {
   width: 44px;
   height: 44px;
   display: inline-grid;
   place-items: center;
+  justify-content: center;
+  align-content: center;
   padding: 0;
 }
 
 .icon-button svg {
   display: block;
+  margin: 0 auto;
 }
 
 .form-actions {
@@ -725,6 +1012,7 @@ button {
 
 .history-row p {
   margin: 4px 0 0;
+  white-space: pre-line;
 }
 
 .history-meta {
@@ -763,6 +1051,7 @@ strong,
   .hero-panel,
   .stats-grid,
   .content-grid,
+  .workout-builder-layout,
   .athlete-grid,
   .field-grid,
   .auth-hero {
@@ -791,6 +1080,14 @@ strong,
 
   .score-row {
     grid-template-columns: 1fr;
+  }
+
+  .field-span-2 {
+    grid-column: auto;
+  }
+
+  .workout-preview-panel {
+    position: static;
   }
 }
 
@@ -825,6 +1122,10 @@ strong,
   .leaderboard-meta,
   .history-meta {
     text-align: left;
+  }
+
+  .form-section-header {
+    flex-direction: column;
   }
 }
 
