@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prepare:web": "cmd /c attrib +P -U frontend /S /D",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run clean:web && npm run prepare:web && next dev ./frontend",
     "dev:web:debug": "npm run clean:web && npm run prepare:web && node --inspect ./node_modules/.bin/next dev ./frontend",
