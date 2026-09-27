@@ -1,8 +1,14 @@
 import { Pool, PoolClient, QueryResultRow } from "pg";
 import { env } from "./config";
 
+const isNeonDatabase =
+  env.DATABASE_URL.includes("neon.tech") ||
+  env.DATABASE_URL.includes("sslmode=require") ||
+  env.DATABASE_URL.includes("pooler.supabase.com");
+
 export const pool = new Pool({
-  connectionString: env.DATABASE_URL
+  connectionString: env.DATABASE_URL,
+  ...(isNeonDatabase ? { ssl: { rejectUnauthorized: false } } : {})
 });
 
 export async function query<T extends QueryResultRow>(text: string, params?: unknown[]) {

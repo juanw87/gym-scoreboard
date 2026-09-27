@@ -1,32 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { buildAuthHeaders, type AuthSession } from "@/lib/auth";
-import type {
-  AthleteSummary,
-  DashboardResponse,
-  NewWorkoutPayload,
-  ScoreInput,
-  SubmitWorkoutScorePayload
-} from "@/lib/types";
-
-const initialWorkoutForm = {
-  title: "",
-  workoutDate: "",
-  workoutType: "for_time",
-  rankingOrder: "asc",
-  description: "",
-  sourceImageUrl: ""
-};
-
-const initialScoreForm: ScoreInput = {
-  athleteId: "",
-  scoreDisplay: "",
-  scoreValue: "",
-  note: ""
-};
+import { type AuthSession } from "@/lib/auth";
+import type { AthleteSummary, DashboardResponse } from "@/lib/types";
 
 const navigationItems = [
   {
@@ -38,11 +16,6 @@ const navigationItems = [
     id: "ranking",
     label: "Ranking",
     description: "Tabla de atletas y podio actual"
-  },
-  {
-    id: "submit",
-    label: "Cargar WOD",
-    description: "Publicar el WOD y subir tu score"
   }
 ] as const;
 
@@ -59,14 +32,6 @@ export function DashboardView({
   const [athletes, setAthletes] = useState<AthleteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submittingWorkout, setSubmittingWorkout] = useState(false);
-  const [submittingScore, setSubmittingScore] = useState(false);
-  const [workoutMessage, setWorkoutMessage] = useState<string | null>(null);
-  const [scoreMessage, setScoreMessage] = useState<string | null>(null);
-  const [workoutError, setWorkoutError] = useState<string | null>(null);
-  const [scoreError, setScoreError] = useState<string | null>(null);
-  const [workoutForm, setWorkoutForm] = useState(initialWorkoutForm);
-  const [scoreForm, setScoreForm] = useState<ScoreInput>(initialScoreForm);
   const [activeSection, setActiveSection] = useState<DashboardSection>("home");
 
   async function loadDashboard() {
@@ -94,79 +59,6 @@ export function DashboardView({
     void loadDashboard();
   }, []);
 
-  async function handleCreateWorkout(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmittingWorkout(true);
-    setWorkoutMessage(null);
-    setWorkoutError(null);
-
-    const payload: NewWorkoutPayload = {
-      title: workoutForm.title,
-      workoutDate: workoutForm.workoutDate,
-      workoutType: workoutForm.workoutType,
-      rankingOrder: workoutForm.rankingOrder,
-      description: workoutForm.description,
-      sourceImageUrl: workoutForm.sourceImageUrl
-    };
-
-    try {
-      await apiFetch("/api/workouts", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
-      setWorkoutForm({
-        ...initialWorkoutForm,
-        workoutDate: workoutForm.workoutDate
-      });
-      setWorkoutMessage("WOD creado. Ahora cada atleta puede cargar su score por separado.");
-      await loadDashboard();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "No se pudo crear el WOD.";
-      setWorkoutError(message);
-    } finally {
-      setSubmittingWorkout(false);
-    }
-  }
-
-  async function handleSubmitScore(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!dashboard?.featuredWorkout) {
-      setScoreError("Primero debes crear un WOD vigente.");
-      return;
-    }
-
-    setSubmittingScore(true);
-    setScoreMessage(null);
-    setScoreError(null);
-
-    const payload: SubmitWorkoutScorePayload = {
-      scoreDisplay: scoreForm.scoreDisplay,
-      scoreValue: Number(scoreForm.scoreValue),
-      note: scoreForm.note
-    };
-
-    try {
-      await apiFetch(`/api/workouts/${dashboard.featuredWorkout.id}/scores`, {
-        method: "POST",
-        headers: buildAuthHeaders(currentUser),
-        body: JSON.stringify(payload)
-      });
-
-      setScoreForm(initialScoreForm);
-      setScoreMessage("Tu score fue cargado para el WOD del dia.");
-      await loadDashboard();
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error ? requestError.message : "No se pudo cargar el score.";
-      setScoreError(message);
-    } finally {
-      setSubmittingScore(false);
-    }
-  }
-
   if (loading) {
     return <main className="page-shell status-card">Cargando dashboard del box...</main>;
   }
@@ -183,18 +75,12 @@ export function DashboardView({
   }
 
   const mainTitle =
-    activeSection === "home"
-      ? "Pantalla principal del atleta"
-      : activeSection === "ranking"
-        ? "Ranking de atletas"
-        : "Carga de WOD y score";
+    activeSection === "home" ? "Pantalla principal del atleta" : "Ranking de atletas";
 
   const mainDescription =
     activeSection === "home"
       ? "Consulta el WOD destacado del dia, el score ganador hasta el momento y el pulso general del box."
-      : activeSection === "ranking"
-        ? "Revisa el leaderboard actual y entra al detalle individual de cada atleta."
-        : "Publica el WOD del dia y permite que cada atleta cargue su propio score por separado.";
+      : "Revisa el leaderboard actual y entra al detalle individual de cada atleta.";
 
   return (
     <main className="page-shell">
@@ -275,6 +161,16 @@ export function DashboardView({
                 <span>{item.description}</span>
               </button>
             ))}
+
+            <Link className="side-nav-link" href="/workouts/new">
+              <strong>Cargar WOD</strong>
+              <span>Ir a la pantalla dedicada para publicar y editar el WOD.</span>
+            </Link>
+
+            <Link className="side-nav-link" href="/scores/new">
+              <strong>Cargar score</strong>
+              <span>Entrar a la pantalla dedicada para registrar resultados.</span>
+            </Link>
           </nav>
 
           <div className="side-nav-summary">
@@ -294,6 +190,21 @@ export function DashboardView({
                     El atleta puede entrar al ranking, revisar el WOD vigente y conocer el score
                     ganador del dia desde un solo lugar.
                   </p>
+                </div>
+
+                <div className="highlight-card">
+                  <span className="card-label">Acceso rapido</span>
+                  <h2>Carga el proximo WOD en una vista dedicada.</h2>
+                  <p>
+                    Separo el flujo de carga para que la publicacion del WOD y la vista previa
+                    vivan en su propia pantalla.
+                  </p>
+                  <Link className="ghost-button link-button" href="/workouts/new">
+                    Ir a cargar WOD
+                  </Link>
+                  <Link className="ghost-button link-button" href="/scores/new">
+                    Ir a cargar score
+                  </Link>
                 </div>
               </section>
 
@@ -451,216 +362,6 @@ export function DashboardView({
                     </Link>
                   ))}
                 </div>
-              </article>
-            </section>
-          ) : null}
-
-          {activeSection === "submit" ? (
-            <section className="content-grid submit-grid">
-              <article className="panel">
-                <div className="panel-heading">
-                  <div>
-                    <p className="eyebrow">Carga</p>
-                    <h2>Publicar WOD del dia</h2>
-                  </div>
-                  <span className="panel-caption">Paso 1 del flujo</span>
-                </div>
-
-                <form className="workout-form" onSubmit={(event) => void handleCreateWorkout(event)}>
-                  <div className="field-grid">
-                    <label>
-                      <span>Titulo</span>
-                      <input
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({ ...current, title: event.target.value }))
-                        }
-                        placeholder="Open 24.4"
-                        value={workoutForm.title}
-                      />
-                    </label>
-                    <label>
-                      <span>Fecha</span>
-                      <input
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            workoutDate: event.target.value
-                          }))
-                        }
-                        type="date"
-                        value={workoutForm.workoutDate}
-                      />
-                    </label>
-                    <label>
-                      <span>Tipo</span>
-                      <select
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            workoutType: event.target.value
-                          }))
-                        }
-                        value={workoutForm.workoutType}
-                      >
-                        <option value="for_time">For time</option>
-                        <option value="amrap">AMRAP</option>
-                        <option value="emon">EMON</option>
-                        <option value="tabata">Tabata</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>Ranking</span>
-                      <select
-                        onChange={(event) =>
-                          setWorkoutForm((current) => ({
-                            ...current,
-                            rankingOrder: event.target.value
-                          }))
-                        }
-                        value={workoutForm.rankingOrder}
-                      >
-                        <option value="asc">Menor score gana</option>
-                        <option value="desc">Mayor score gana</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  <label>
-                    <span>Descripcion</span>
-                    <textarea
-                      onChange={(event) =>
-                        setWorkoutForm((current) => ({
-                          ...current,
-                          description: event.target.value
-                        }))
-                      }
-                      placeholder="21-15-9 thrusters and pull-ups"
-                      rows={3}
-                      value={workoutForm.description}
-                    />
-                  </label>
-
-                  <label>
-                    <span>Imagen de referencia</span>
-                    <input
-                      onChange={(event) =>
-                        setWorkoutForm((current) => ({
-                          ...current,
-                          sourceImageUrl: event.target.value
-                        }))
-                      }
-                      placeholder="https://..."
-                      value={workoutForm.sourceImageUrl}
-                    />
-                  </label>
-
-                  <div className="form-actions">
-                    <button className="primary-button" disabled={submittingWorkout} type="submit">
-                      {submittingWorkout ? "Guardando..." : "Publicar WOD"}
-                    </button>
-                    {workoutMessage ? <span className="success-message">{workoutMessage}</span> : null}
-                    {workoutError ? <span className="error-message">{workoutError}</span> : null}
-                  </div>
-                </form>
-              </article>
-
-              <article className="panel">
-                <div className="panel-heading">
-                  <div>
-                    <p className="eyebrow">Carga personal</p>
-                    <h2>Subir mi score</h2>
-                  </div>
-                  <button
-                    className="ghost-button"
-                    onClick={() => setActiveSection("home")}
-                    type="button"
-                  >
-                    Volver al inicio
-                  </button>
-                </div>
-
-                {dashboard?.featuredWorkout ? (
-                  <form className="workout-form" onSubmit={(event) => void handleSubmitScore(event)}>
-                    <div className="metric-grid">
-                      <div>
-                        <span>WOD vigente</span>
-                        <strong>{dashboard.featuredWorkout.title}</strong>
-                      </div>
-                      <div>
-                        <span>Fecha</span>
-                        <strong>{dashboard.featuredWorkout.workoutDate}</strong>
-                      </div>
-                      <div>
-                        <span>Formato</span>
-                        <strong>{dashboard.featuredWorkout.workoutTypeLabel}</strong>
-                      </div>
-                      <div>
-                        <span>Scores actuales</span>
-                        <strong>{dashboard.featuredWorkout.scoreCount}</strong>
-                      </div>
-                    </div>
-
-                    <label>
-                      <span>Score visible</span>
-                      <input
-                        onChange={(event) =>
-                          setScoreForm((current) => ({
-                            ...current,
-                            scoreDisplay: event.target.value
-                          }))
-                        }
-                        placeholder="14:28 o 212 reps"
-                        value={scoreForm.scoreDisplay}
-                      />
-                    </label>
-
-                    <label>
-                      <span>Valor numerico para ranking</span>
-                      <input
-                        onChange={(event) =>
-                          setScoreForm((current) => ({
-                            ...current,
-                            scoreValue: event.target.value
-                          }))
-                        }
-                        placeholder="868 o 212"
-                        type="number"
-                        value={scoreForm.scoreValue}
-                      />
-                    </label>
-
-                    <label>
-                      <span>Nota</span>
-                      <input
-                        onChange={(event) =>
-                          setScoreForm((current) => ({
-                            ...current,
-                            note: event.target.value
-                          }))
-                        }
-                        placeholder="PR, capped, smooth"
-                        value={scoreForm.note}
-                      />
-                    </label>
-
-                    <div className="form-actions">
-                      <button className="primary-button" disabled={submittingScore} type="submit">
-                        {submittingScore ? "Guardando..." : "Cargar mi score"}
-                      </button>
-                      {scoreMessage ? <span className="success-message">{scoreMessage}</span> : null}
-                      {scoreError ? <span className="error-message">{scoreError}</span> : null}
-                    </div>
-                  </form>
-                ) : (
-                  <div className="history-list">
-                    <div className="history-row">
-                      <div>
-                        <strong>No hay WOD vigente</strong>
-                        <p>Publica primero el WOD del dia para que cada atleta pueda cargar su score.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </article>
             </section>
           ) : null}
