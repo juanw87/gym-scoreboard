@@ -138,8 +138,41 @@ export const athleteProfileSchema = z.object({
     .nullable()
 });
 
+export const rmExerciseOptions = [
+  "Back Squat",
+  "Front Squat",
+  "Overhead Squat",
+  "Deadlift",
+  "Sumo Deadlift",
+  "Bench Press",
+  "Strict Press",
+  "Push Press",
+  "Push Jerk",
+  "Split Jerk",
+  "Clean",
+  "Power Clean",
+  "Snatch",
+  "Power Snatch",
+  "Clean & Jerk",
+  "Thruster"
+] as const;
+
+export const createRmRecordSchema = z.object({
+  exerciseName: z.enum(rmExerciseOptions, {
+    error: "Selecciona un ejercicio válido de la lista."
+  }),
+  rmValue: z
+    .number({
+      error: "Ingresa una carga válida."
+    })
+    .positive("La carga debe ser mayor a 0.")
+    .max(1000, "Ingresa una carga válida."),
+  rmDate: z.string().date("Ingresa una fecha válida.")
+});
+
 export type CreateWorkoutInput = z.infer<typeof createWorkoutSchema>;
 export type SubmitWorkoutScoreInput = z.infer<typeof submitWorkoutScoreSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type AthleteProfileInput = z.infer<typeof athleteProfileSchema>;
+export type CreateRmRecordInput = z.infer<typeof createRmRecordSchema>;

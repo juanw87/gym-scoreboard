@@ -171,6 +171,11 @@ export function DashboardView({
               <strong>Cargar score</strong>
               <span>Entrar a la pantalla dedicada para registrar resultados.</span>
             </Link>
+
+            <Link className="side-nav-link" href="/rms/new">
+              <strong>Cargar RM</strong>
+              <span>Registrar tus marcas de repeticion maxima por ejercicio.</span>
+            </Link>
           </nav>
 
           <div className="side-nav-summary">
