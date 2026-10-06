@@ -204,12 +204,14 @@ export function DashboardView({
                     Separo el flujo de carga para que la publicacion del WOD y la vista previa
                     vivan en su propia pantalla.
                   </p>
-                  <Link className="ghost-button link-button" href="/workouts/new">
-                    Ir a cargar WOD
-                  </Link>
-                  <Link className="ghost-button link-button" href="/scores/new">
-                    Ir a cargar score
-                  </Link>
+                  <div className="form-actions">
+                    <Link className="ghost-button link-button" href="/workouts/new">
+                      Ir a cargar WOD
+                    </Link>
+                    <Link className="ghost-button link-button" href="/scores/new">
+                      Ir a cargar score
+                    </Link>
+                  </div>
                 </div>
               </section>
 
