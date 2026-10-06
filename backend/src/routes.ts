@@ -7,6 +7,7 @@ import {
 } from "./controllers/dashboard-controller";
 import { getHealth } from "./controllers/health-controller";
 import { getProfileController, updateProfileController } from "./controllers/profile-controller";
+import { createRmRecordController, getRmRecordsController } from "./controllers/rm-record-controller";
 import { extractWorkoutImageController } from "./controllers/workout-image-controller";
 import {
   createWorkoutController,
@@ -21,6 +22,8 @@ router.post("/auth/register", registerController);
 router.get("/dashboard", getDashboardController);
 router.get("/profile/:athleteId", getProfileController);
 router.put("/profile/:athleteId", updateProfileController);
+router.post("/rms", createRmRecordController);
+router.get("/rms/:athleteId", getRmRecordsController);
 router.get("/athletes", getAthletesController);
 router.get("/athletes/:id", getAthleteDetailController);
 router.post("/workouts", createWorkoutController);

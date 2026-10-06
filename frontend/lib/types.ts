@@ -156,3 +156,45 @@ export type AthleteProfileForm = {
   heightCm: string;
   weightKg: string;
 };
+
+export const rmExerciseOptions = [
+  "Back Squat",
+  "Front Squat",
+  "Overhead Squat",
+  "Deadlift",
+  "Sumo Deadlift",
+  "Bench Press",
+  "Strict Press",
+  "Push Press",
+  "Push Jerk",
+  "Split Jerk",
+  "Clean",
+  "Power Clean",
+  "Snatch",
+  "Power Snatch",
+  "Clean & Jerk",
+  "Thruster"
+] as const;
+
+export type RmExerciseName = (typeof rmExerciseOptions)[number];
+
+export type RmRecord = {
+  id: number;
+  athleteId: number;
+  exerciseName: string;
+  rmValue: number;
+  rmDate: string;
+  createdAt: string;
+};
+
+export type RmRecordGroup = {
+  exerciseName: string;
+  latest: RmRecord;
+  history: RmRecord[];
+};
+
+export type CreateRmRecordPayload = {
+  exerciseName: string;
+  rmValue: number;
+  rmDate: string;
+};

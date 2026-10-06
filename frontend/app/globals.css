@@ -59,7 +59,7 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  align-items: end;
+  align-items: center;
   margin-bottom: 24px;
 }
 
@@ -90,7 +90,7 @@ button {
 .session-badge {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  /*flex-wrap: wrap;*/
   align-items: center;
   padding: 10px 12px;
   border-radius: 16px;
@@ -191,26 +191,6 @@ button {
   padding-top: 0;
 }
 
-.profile-grid {
-  align-items: start;
-}
-
-.profile-panel,
-.profile-summary-panel {
-  min-height: 100%;
-}
-
-.profile-form input:disabled {
-  cursor: not-allowed;
-  color: rgba(255, 255, 255, 0.78);
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.profile-form .form-actions {
-  margin-top: 8px;
-}
-
 .is-active-toggle {
   border-color: rgba(255, 214, 10, 0.72);
   color: var(--brand);
@@ -285,6 +265,7 @@ button {
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
   transition:
     transform 140ms ease,
     border-color 140ms ease,
@@ -325,7 +306,7 @@ button {
 
 .hero-panel {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1.50fr 0.85fr;
   gap: 24px;
   padding: 32px;
   border-radius: 28px;
@@ -456,6 +437,16 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.metric-grid input {
+  margin-top: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--text);
+}
+
 .highlight-card .metric-grid strong {
   font-size: clamp(1.2rem, 5vw, 1.7rem);
   line-height: 1.02;
@@ -479,6 +470,13 @@ button {
 
 .content-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.full-width-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
   margin-bottom: 24px;
 }
 

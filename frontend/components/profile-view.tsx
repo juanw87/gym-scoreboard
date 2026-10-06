@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { buildAuthHeaders, type AuthSession } from "@/lib/auth";
-import type { AthleteProfileForm, AthleteProfileResponse } from "@/lib/types";
+import type { AthleteProfileForm, AthleteProfileResponse, RmRecordGroup } from "@/lib/types";
 
 function toFormState(profile: AthleteProfileResponse): AthleteProfileForm {
   return {
@@ -38,6 +38,10 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rmGroups, setRmGroups] = useState<RmRecordGroup[]>([]);
+  const [rmLoading, setRmLoading] = useState(true);
+  const [rmError, setRmError] = useState<string | null>(null);
+  const [expandedExercises, setExpandedExercises] = useState<string[]>([]);
 
   async function loadProfile() {
     setLoading(true);
@@ -65,6 +69,40 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
   useEffect(() => {
     void loadProfile();
   }, [currentUser.athleteId]);
+
+  useEffect(() => {
+    async function loadRms() {
+      setRmLoading(true);
+      setRmError(null);
+
+      try {
+        const response = await apiFetch<RmRecordGroup[]>(
+          `/api/rms/${currentUser.athleteId}`,
+          {
+            headers: buildAuthHeaders(currentUser)
+          }
+        );
+
+        setRmGroups(response);
+      } catch (requestError) {
+        setRmError(
+          requestError instanceof Error ? requestError.message : "No se pudieron cargar los RMs."
+        );
+      } finally {
+        setRmLoading(false);
+      }
+    }
+
+    void loadRms();
+  }, [currentUser.athleteId]);
+
+  function toggleExercise(exerciseName: string) {
+    setExpandedExercises((current) =>
+      current.includes(exerciseName)
+        ? current.filter((name) => name !== exerciseName)
+        : [...current, exerciseName]
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,12 +221,12 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
         </div>
       </header>
 
-      <section className="content-grid profile-grid">
-        <article className="panel profile-panel">
+      <section className="full-width-grid">
+        <article className="panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Datos personales</p>
-              <h2>Ficha del atleta</h2>
+              <h2>Resumen rapido</h2>
             </div>
 
             <button
@@ -228,125 +266,228 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
             </button>
           </div>
 
-          <form className="workout-form profile-form" onSubmit={(event) => void handleSubmit(event)}>
-            <div className="field-grid">
-              <label>
+          <form className="workout-form" onSubmit={(event) => void handleSubmit(event)}>
+            <div className="metric-grid">
+              <div>
                 <span>Nombre</span>
-                <input
-                  disabled={!isEditing}
-                  onChange={(event) =>
-                    setFormData((current) => ({ ...current, firstName: event.target.value }))
-                  }
-                  value={formData.firstName}
-                />
-              </label>
+                {isEditing ? (
+                  <input
+                    minLength={2}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, firstName: event.target.value }))
+                    }
+                    required
+                    value={formData.firstName}
+                  />
+                ) : (
+                  <strong>{formData.firstName || "-"}</strong>
+                )}
+              </div>
 
-              <label>
+              <div>
                 <span>Apellido</span>
-                <input
-                  disabled={!isEditing}
-                  onChange={(event) =>
-                    setFormData((current) => ({ ...current, lastName: event.target.value }))
-                  }
-                  value={formData.lastName}
-                />
-              </label>
-            </div>
+                {isEditing ? (
+                  <input
+                    minLength={2}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, lastName: event.target.value }))
+                    }
+                    required
+                    value={formData.lastName}
+                  />
+                ) : (
+                  <strong>{formData.lastName || "-"}</strong>
+                )}
+              </div>
 
-            <div className="field-grid">
-              <label>
+              <div>
                 <span>Edad</span>
-                <input
-                  disabled={!isEditing}
-                  min="1"
-                  onChange={(event) =>
-                    setFormData((current) => ({ ...current, age: event.target.value }))
-                  }
-                  placeholder="28"
-                  type="number"
-                  value={formData.age}
-                />
-              </label>
+                {isEditing ? (
+                  <input
+                    min="1"
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, age: event.target.value }))
+                    }
+                    placeholder="28"
+                    type="number"
+                    value={formData.age}
+                  />
+                ) : (
+                  <strong>{formData.age || "-"}</strong>
+                )}
+              </div>
 
-              <label>
+              <div>
                 <span>Correo electronico</span>
-                <input disabled value={profile?.email ?? currentUser.email} />
-              </label>
-            </div>
+                <strong style={{ fontSize: "1.1rem", overflowWrap: "anywhere" }}>
+                  {profile?.email ?? currentUser.email}
+                </strong>
+              </div>
 
-            <div className="field-grid">
-              <label>
+              <div>
                 <span>Estatura (cm)</span>
-                <input
-                  disabled={!isEditing}
-                  min="1"
-                  onChange={(event) =>
-                    setFormData((current) => ({ ...current, heightCm: event.target.value }))
-                  }
-                  placeholder="170"
-                  step="0.01"
-                  type="number"
-                  value={formData.heightCm}
-                />
-              </label>
+                {isEditing ? (
+                  <input
+                    min="1"
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, heightCm: event.target.value }))
+                    }
+                    placeholder="170"
+                    step="0.01"
+                    type="number"
+                    value={formData.heightCm}
+                  />
+                ) : (
+                  <strong>{formData.heightCm ? `${formData.heightCm} cm` : "-"}</strong>
+                )}
+              </div>
 
-              <label>
+              <div>
                 <span>Peso (kg)</span>
-                <input
-                  disabled={!isEditing}
-                  min="1"
-                  onChange={(event) =>
-                    setFormData((current) => ({ ...current, weightKg: event.target.value }))
-                  }
-                  placeholder="70"
-                  step="0.01"
-                  type="number"
-                  value={formData.weightKg}
-                />
-              </label>
+                {isEditing ? (
+                  <input
+                    min="1"
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, weightKg: event.target.value }))
+                    }
+                    placeholder="70"
+                    step="0.01"
+                    type="number"
+                    value={formData.weightKg}
+                  />
+                ) : (
+                  <strong>{formData.weightKg ? `${formData.weightKg} kg` : "-"}</strong>
+                )}
+              </div>
             </div>
 
-            <div className="form-actions">
-              <button className="primary-button" disabled={!isEditing || saving} type="submit">
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
+            <div className="form-actions" style={{ marginTop: "16px" }}>
               {isEditing ? (
-                <button className="ghost-button" onClick={handleCancel} type="button">
-                  Cancelar
-                </button>
+                <>
+                  <button className="primary-button" disabled={saving} type="submit">
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                  <button className="ghost-button" onClick={handleCancel} type="button">
+                    Cancelar
+                  </button>
+                </>
               ) : null}
               {message ? <span className="success-message">{message}</span> : null}
               {error ? <span className="error-message">{error}</span> : null}
             </div>
           </form>
-        </article>
 
-        <article className="panel profile-summary-panel">
+          <div className="panel-heading" style={{ marginTop: "22px", marginBottom: "14px" }}>
+            <div>
+              <p className="eyebrow">Personal records</p>
+              <h2 style={{ fontSize: "1.4rem" }}>Mejores marcas</h2>
+            </div>
+          </div>
+
+          {rmLoading ? (
+            <p>Cargando RMs...</p>
+          ) : rmGroups.length === 0 ? (
+            <p style={{ color: "var(--muted)", margin: 0 }}>
+              Todavia no cargaste RMs.{" "}
+              <Link className="back-link" href="/rms/new" style={{ marginBottom: 0 }}>
+                Cargar RM
+              </Link>
+            </p>
+          ) : (
+            <>
+              <div className="metric-grid">
+                {rmGroups.slice(0, 4).map((group) => (
+                  <div key={group.exerciseName}>
+                    <span>{group.exerciseName}</span>
+                    <strong>{group.latest.rmValue} kg</strong>
+                  </div>
+                ))}
+              </div>
+              <p style={{ margin: "14px 0 0" }}>
+                <a className="back-link" href="#mis-rms" style={{ marginBottom: 0 }}>
+                  Ver todos en Mis RMs
+                </a>
+              </p>
+            </>
+          )}
+        </article>
+      </section>
+
+      <section className="full-width-grid">
+        <article className="panel" id="mis-rms">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Estado actual</p>
-              <h2>Resumen rapido</h2>
+              <p className="eyebrow">Fuerza</p>
+              <h2>Mis RMs por ejercicio</h2>
             </div>
+            <Link className="ghost-button link-button" href="/rms/new">
+              Cargar RM
+            </Link>
           </div>
 
-          <div className="metric-grid">
-            <div>
-              <span>Nombre completo</span>
-              <strong>{`${formData.firstName} ${formData.lastName}`.trim() || "-"}</strong>
+          {rmLoading ? (
+            <p>Cargando RMs...</p>
+          ) : rmError ? (
+            <p className="error-message">{rmError}</p>
+          ) : rmGroups.length === 0 ? (
+            <div className="highlight-card">
+              <span className="card-label">Sin marcas</span>
+              <strong>Todavia no cargaste RMs</strong>
+              <p>Registra tu primera marca desde la pantalla de carga de RMs.</p>
             </div>
-            <div>
-              <span>Edad</span>
-              <strong>{formData.age || "-"}</strong>
+          ) : (
+            <div className="history-list">
+              {rmGroups.map((group) => {
+                const isExpanded = expandedExercises.includes(group.exerciseName);
+
+                return (
+                  <div className="history-row" key={group.exerciseName}>
+                    <div style={{ width: "100%" }}>
+                      <button
+                        aria-expanded={isExpanded}
+                        className="ghost-button"
+                        onClick={() => toggleExercise(group.exerciseName)}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "100%",
+                          alignItems: "center"
+                        }}
+                        type="button"
+                      >
+                        <strong>{group.exerciseName}</strong>
+                        <span>
+                          {group.latest.rmValue} kg ({group.latest.rmDate}){" "}
+                          {isExpanded ? "-" : "+"}
+                        </span>
+                      </button>
+
+                      {isExpanded ? (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          {group.history.map((record) => (
+                            <div
+                              className="history-meta"
+                              key={record.id}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                padding: "0.35rem 0"
+                              }}
+                            >
+                              <span>{record.rmDate}</span>
+                              <span>
+                                <strong>{record.rmValue} kg</strong>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div>
-              <span>Estatura</span>
-              <strong>{formData.heightCm ? `${formData.heightCm} cm` : "-"}</strong>
-            </div>
-            <div>
-              <span>Peso</span>
-              <strong>{formData.weightKg ? `${formData.weightKg} kg` : "-"}</strong>
-            </div>
-          </div>
+          )}
         </article>
       </section>
     </main>
