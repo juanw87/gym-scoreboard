@@ -730,7 +730,76 @@ button {
 }
 
 .preview-block-card.is-draft {
-  opacity: 0.92;
+  position: relative;
+  padding: 16px;
+  border: 1px dashed rgba(255, 214, 10, 0.45);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 10, 0.12), rgba(255, 214, 10, 0.04)),
+    rgba(17, 17, 17, 0.96);
+}
+
+.preview-block-card.is-draft::before {
+  content: "Borrador";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #000000;
+  background: var(--brand);
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(255, 214, 10, 0.25);
+}
+
+.preview-block-card.is-draft .preview-block-heading {
+  padding-right: 90px;
+}
+
+/* Boton sticky para guardar el bloque: oculto en desktop, fijo abajo en movil. */
+.add-block-sticky {
+  display: none;
+}
+
+@media (max-width: 979px) {
+  .add-block-header-btn {
+    display: none !important;
+  }
+
+  .add-block-sticky {
+    position: sticky;
+    bottom: 16px;
+    z-index: 50;
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 214, 10, 0.4);
+    background: rgba(17, 17, 17, 0.97);
+    box-shadow: var(--shadow);
+    justify-content: center;
+  }
+
+  .add-block-sticky .primary-button {
+    width: 100%;
+  }
+
+  .add-block-sticky-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .add-block-sticky-hint svg {
+    color: var(--brand);
+  }
 }
 
 .preview-exercise-list {
@@ -973,6 +1042,16 @@ button {
   display: block;
   margin: 0 auto;
   vertical-align: middle;
+}
+
+.button-with-icon.compact {
+  gap: 6px !important;
+}
+
+.button-with-icon.compact svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
 }
 
 .icon-button {
