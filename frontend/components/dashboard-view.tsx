@@ -10,12 +10,12 @@ const navigationItems = [
   {
     id: "home",
     label: "Inicio",
-    description: "Resumen del box y WOD del dia"
+    // description: "Resumen del box y WOD del dia"
   },
   {
     id: "ranking",
     label: "Ranking",
-    description: "Tabla de atletas y podio actual"
+    // description: "Tabla de atletas y podio actual"
   }
 ] as const;
 
@@ -249,23 +249,23 @@ export function DashboardView({
                 type="button"
               >
                 <strong>{item.label}</strong>
-                <span>{item.description}</span>
+                {/* <span>{item.description}</span> */}
               </button>
             ))}
 
             <Link className="side-nav-link" href="/workouts/new">
               <strong>Cargar WOD</strong>
-              <span>Ir a la pantalla dedicada para publicar y editar el WOD.</span>
+              {/* <span>Ir a la pantalla dedicada para publicar y editar el WOD.</span> */}
             </Link>
 
             <Link className="side-nav-link" href="/scores/new">
               <strong>Cargar score</strong>
-              <span>Entrar a la pantalla dedicada para registrar resultados.</span>
+              {/* <span>Entrar a la pantalla dedicada para registrar resultados.</span> */}
             </Link>
 
             <Link className="side-nav-link" href="/rms/new">
               <strong>Cargar RM</strong>
-              <span>Registrar tus marcas de repeticion maxima por ejercicio.</span>
+              {/* <span>Registrar tus marcas de repeticion maxima por ejercicio.</span> */}
             </Link>
           </nav>
 

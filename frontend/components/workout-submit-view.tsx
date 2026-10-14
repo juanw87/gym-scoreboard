@@ -526,24 +526,22 @@ async function handleCreateWorkout() {
   return (
     <main className="page-shell">
       <Link className="back-link" href="/dashboard">
-        Volver al dashboard
+        Volver al inicio
       </Link>
 
       <section className="hero-panel">
         <div>
-          <p className="eyebrow">Carga</p>
-          <h1>Publica el WOD y revisa la vista previa en tiempo real.</h1>
+          <h1>Creá el WOD. Prepará el próximo desafío.</h1>
           <p className="hero-copy">
-            Puedes armar el WOD manualmente o subir una foto para que la IA reconstruya bloques y
-            ejercicios antes de publicar.
+            Armá tu entrenamiento manualmente o subí una foto para que la IA identifique los bloques y ejercicios. Revisá la vista previa y publicalo cuando esté listo.
           </p>
         </div>
         <div className="highlight-card">
           <span className="card-label">Siguiente paso</span>
-          <h2>La carga de score ahora vive en una pantalla separada.</h2>
-          <p>Publica el WOD aqui y luego entra a la vista dedicada para registrar resultados.</p>
+          <h2>El entrenamiento sigue en los resultados.</h2>
+          <p>Primero publicá el WOD. Después, registrá los scores y guardá el progreso de tus atletas.</p>
           <Link className="ghost-button link-button" href="/scores/new">
-            Ir a cargar score
+            Cargar score
           </Link>
         </div>
       </section>
@@ -553,12 +551,12 @@ async function handleCreateWorkout() {
           <article className="panel">
             <div className="panel-heading">
               <div>
-                <p className="eyebrow">Carga</p>
                 <h2>{workoutInputMode === "manual" ? "Armar WOD del dia" : "Subir foto del WOD"}</h2>
               </div>
               <span className="panel-caption">
                 {workoutInputMode === "manual"
-                  ? "Fecha, bloque actual y ejercicio actual"
+                  ? null
+                  // ? "Fecha, bloque actual y ejercicio actual"
                   : "Carga una imagen y deja que la IA prepare la vista previa"}
               </span>
             </div>
@@ -1007,7 +1005,8 @@ async function handleCreateWorkout() {
               </div>
               <span className="panel-caption">
                 {workoutInputMode === "manual"
-                  ? "Se actualiza mientras completas la carga"
+                ? null
+                  // ? "Se actualiza mientras completas la carga"
                   : "Valida la extraccion antes de publicar"}
               </span>
             </div>
