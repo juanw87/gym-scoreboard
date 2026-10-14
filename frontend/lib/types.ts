@@ -82,7 +82,7 @@ export type NewWorkoutExercisePayload = {
 export type NewWorkoutBlockPayload = {
   name: string;
   type: WorkoutBlockType;
-  rounds: number;
+  rounds?: number;
   timeCap: string;
   exercises: NewWorkoutExercisePayload[];
 };

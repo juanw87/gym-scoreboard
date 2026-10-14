@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faEdit, faPlus, faSave, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { apiFetch } from "@/lib/api";
 import type {
   ExtractWorkoutImagePayload,
@@ -169,7 +169,7 @@ function mapPayloadBlockToForm(block: NewWorkoutPayload["blocks"][number]) {
   return {
     name: block.name,
     type: block.type,
-    rounds: block.rounds.toString(),
+    rounds: block.rounds?.toString() ?? "",
     timeCap: block.timeCap,
     exercises: block.exercises.map(mapPayloadExerciseToForm)
   } satisfies WorkoutBlockForm;
@@ -269,8 +269,11 @@ export function WorkoutSubmitView() {
       return "Completa el nombre del ejercicio antes de agregarlo.";
     }
 
-    if (currentExercise.targetType === "reps" && !currentExercise.reps.trim()) {
-      return "Completa las repeticiones del ejercicio antes de agregarlo.";
+    if (
+      currentExercise.targetType === "reps" &&
+      (!currentExercise.reps.trim() || Number(currentExercise.reps) <= 0)
+    ) {
+      return "Las repeticiones deben ser un número mayor a 0.";
     }
 
     if (currentExercise.targetType === "time_cap" && !currentExercise.timeCap.trim()) {
@@ -286,8 +289,11 @@ export function WorkoutSubmitView() {
       return "Completa el nombre del bloque antes de agregarlo.";
     }
 
-    if (blockUsesRounds(currentBlock.type) && !currentBlock.rounds.trim()) {
-      return "Completa las rondas del bloque antes de agregarlo.";
+    if (
+      blockUsesRounds(currentBlock.type) &&
+      (!currentBlock.rounds.trim() || Number(currentBlock.rounds) <= 0)
+    ) {
+      return "Las rondas deben ser un número mayor a 0.";
     }
 
     if (!currentBlock.timeCap.trim()) {
@@ -468,7 +474,7 @@ async function handleCreateWorkout() {
       blocks: allBlocks.map((block) => ({
         name: block.name,
         type: block.type,
-        rounds: Number(block.rounds),
+        rounds: blockUsesRounds(block.type) ? Number(block.rounds) : undefined,
         timeCap: block.timeCap,
         exercises: block.exercises.map((exercise) => ({
           name: exercise.name,
@@ -501,6 +507,45 @@ async function handleCreateWorkout() {
     } finally {
       setSubmittingWorkout(false);
     }
+  }
+
+  function isCurrentBlockPublishable() {
+    if (!currentBlock.name.trim()) {
+      return false;
+    }
+
+    if (
+      blockUsesRounds(currentBlock.type) &&
+      (!currentBlock.rounds.trim() || Number(currentBlock.rounds) <= 0)
+    ) {
+      return false;
+    }
+
+    if (!currentBlock.timeCap.trim()) {
+      return false;
+    }
+
+    if (currentBlock.exercises.length === 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function canPublishWorkout() {
+    if (submittingWorkout || extractingWorkoutImage) {
+      return false;
+    }
+
+    if (!workoutForm.workoutDate.trim()) {
+      return false;
+    }
+
+    if (workoutForm.blocks.length > 0) {
+      return true;
+    }
+
+    return isCurrentBlockPublishable();
   }
 
   const previewWorkoutType = deriveWorkoutType(
@@ -607,7 +652,7 @@ async function handleCreateWorkout() {
                   </div>
                   <button
                     aria-label="Agregar bloque"
-                    className="ghost-button button-with-icon icon-button"
+                    className="ghost-button button-with-icon icon-button add-block-header-btn"
                     onClick={handleAddBlock}
                     title="Agregar bloque"
                     type="button"
@@ -962,6 +1007,25 @@ async function handleCreateWorkout() {
                 </div>
 
                 </section>
+
+                <div className="add-block-sticky">
+                  <button
+                    aria-label="Guardar bloque en el WOD"
+                    className="primary-button button-with-icon compact"
+                    onClick={handleAddBlock}
+                    title="Guardar bloque en el WOD"
+                    type="button"
+                  >
+                    <FontAwesomeIcon aria-hidden="true" icon={faSave} />
+                    Guardar bloque
+                  </button>
+                  <span className="add-block-sticky-hint">
+                    <FontAwesomeIcon aria-hidden="true" icon={faCheck} />
+                    {currentBlock.exercises.length > 0
+                      ? `${currentBlock.exercises.length} ejercicio(s) listos`
+                      : "Agrega ejercicios al bloque"}
+                  </span>
+                </div>
               </div>
             ) : (
               <form className="workout-form" onSubmit={(event) => void handleExtractWorkoutFromPhoto(event)}>
@@ -1146,7 +1210,7 @@ async function handleCreateWorkout() {
               <div className="form-actions">
                 <button
                   className="primary-button"
-                  disabled={submittingWorkout || extractingWorkoutImage}
+                  disabled={!canPublishWorkout()}
                   onClick={() => void handleCreateWorkout()}
                   type="button"
                 >
