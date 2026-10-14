@@ -97,25 +97,24 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
   return (
     <main className="page-shell">
       <Link className="back-link" href="/dashboard">
-        Volver al dashboard
+        Volver al inicio
       </Link>
 
       <section className="hero-panel">
         <div>
           <p className="eyebrow">Score</p>
-          <h1>Sube tu resultado desde una pantalla dedicada.</h1>
+          <h1>Registrá tu score, dejá tu marca.</h1>
           <p className="hero-copy">
-            Consulta el WOD vigente, revisa el contexto del dia y registra tu marca sin mezclarlo
-            con la carga del entrenamiento.
+            Consultá el WOD del día, registrá tu resultado y construí tu historial de rendimiento entrenamiento tras entrenamiento.
           </p>
         </div>
 
         <div className="highlight-card">
           <span className="card-label">Administracion</span>
-          <h2>Necesitas ajustar el WOD antes del score.</h2>
-          <p>Si la rutina todavia no esta lista, vuelve a la pantalla de publicacion del WOD.</p>
+          <h2>¿El wod todabía no está listo?</h2>
+          <p>Volvé a la carga del WOD para revisar los bloques y ejercicios antes de registrar resultados.</p>
           <Link className="ghost-button link-button" href="/workouts/new">
-            Ir a cargar WOD
+            Volver a editar WOD
           </Link>
         </div>
       </section>
@@ -124,8 +123,7 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Carga personal</p>
-              <h2>Subir mi score</h2>
+              <h2>Registrá tu marca.</h2>
             </div>
             <Link className="ghost-button link-button" href="/workouts/new">
               Ver pantalla de WOD
@@ -136,25 +134,25 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
             <form className="workout-form" onSubmit={(event) => void handleSubmitScore(event)}>
               <div className="metric-grid">
                 <div>
-                  <span>WOD vigente</span>
+                  <span>Entrenamiento</span>
                   <strong>{dashboard.featuredWorkout.title}</strong>
                 </div>
                 <div>
-                  <span>Fecha</span>
+                  <span>Fecha del Wod</span>
                   <strong>{dashboard.featuredWorkout.workoutDate}</strong>
                 </div>
                 <div>
-                  <span>Formato</span>
+                  <span>Tipo de Wod</span>
                   <strong>{dashboard.featuredWorkout.workoutTypeLabel}</strong>
                 </div>
                 <div>
-                  <span>Scores actuales</span>
+                  <span>Resultados registrados</span>
                   <strong>{dashboard.featuredWorkout.scoreCount}</strong>
                 </div>
               </div>
 
               <label>
-                <span>Score visible</span>
+                <span>Score</span>               
                 <input
                   onChange={(event) =>
                     setScoreForm((current) => ({
@@ -162,7 +160,7 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
                       scoreDisplay: event.target.value
                     }))
                   }
-                  placeholder="14:28 o 212 reps"
+                  placeholder="Tu resultado tal como lo registraste en el entrenamiento."
                   value={scoreForm.scoreDisplay}
                 />
               </label>
@@ -178,7 +176,7 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
                         scoreValue: event.target.value
                       }))
                     }
-                    placeholder="868"
+                    placeholder="Número total de repeticiones o tiempo en que terminaste, cuando corresponda."
                     required
                     type="number"
                     value={scoreForm.scoreValue}
@@ -194,7 +192,7 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
                         note: event.target.value
                       }))
                     }
-                    placeholder="Escalado o sensaciones"
+                    placeholder="Ej. RX, escalado, sensaciones..."
                     value={scoreForm.note}
                   />
                 </label>
@@ -202,7 +200,7 @@ export function ScoreSubmitView({ currentUser }: { currentUser: AuthSession }) {
 
               <div className="form-actions">
                 <button className="primary-button" disabled={submittingScore} type="submit">
-                  {submittingScore ? "Guardando..." : "Subir score"}
+                  {submittingScore ? "Guardando..." : "Registrar score"}
                 </button>
                 {scoreMessage ? <span className="success-message">{scoreMessage}</span> : null}
                 {scoreError ? <span className="error-message">{scoreError}</span> : null}

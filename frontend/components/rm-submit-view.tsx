@@ -71,25 +71,24 @@ export function RmSubmitView({ currentUser }: { currentUser: AuthSession }) {
   return (
     <main className="page-shell">
       <Link className="back-link" href="/dashboard">
-        Volver al dashboard
+        Volver al inicio
       </Link>
 
       <section className="hero-panel">
         <div>
-          <p className="eyebrow">RM</p>
-          <h1>Carga tus marcas de repeticion maxima.</h1>
+          <p className="eyebrow">Récords Personales</p>
+          <h1>Registra tu próxima marca.</h1>
           <p className="hero-copy">
-            Registra la fecha, el ejercicio y la carga maxima que lograste levantar. Solo se guarda
-            una marca por ejercicio y por fecha.
+            Registrá el ejercicio, la carga máxima y la fecha de cada marca. Construí tu historial de fuerza y llevá un registro de tus mejores levantamientos.
           </p>
         </div>
 
         <div className="highlight-card">
-          <span className="card-label">Perfil</span>
-          <h2>Tus RMs viven en tu perfil.</h2>
+          <span className="card-label">Tu perfil</span>
+          <h2>Tus marcas, siempre a mano.</h2>
           <p>Consulta el historial por ejercicio desde tu ficha de atleta.</p>
           <Link className="ghost-button link-button" href="/profile">
-            Ir a mi perfil
+            Ver mis records
           </Link>
         </div>
       </section>
@@ -98,8 +97,8 @@ export function RmSubmitView({ currentUser }: { currentUser: AuthSession }) {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Carga personal</p>
-              <h2>Subir mi RM</h2>
+              <p className="eyebrow">Récord personal</p>
+              <h2>Registra tu marca</h2>
             </div>
             <span className="panel-caption">{currentUser.name}</span>
           </div>
@@ -147,7 +146,7 @@ export function RmSubmitView({ currentUser }: { currentUser: AuthSession }) {
 
             <div className="form-actions">
               <button className="primary-button" disabled={submitting} type="submit">
-                {submitting ? "Guardando..." : "Guardar RM"}
+                {submitting ? "Guardando..." : "Guardar marca"}
               </button>
               {message ? <span className="success-message">{message}</span> : null}
               {error ? <span className="error-message">{error}</span> : null}

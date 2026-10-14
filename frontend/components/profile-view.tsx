@@ -187,12 +187,11 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
       <header className="top-header">
         <div>
           <p className="eyebrow">Perfil del atleta</p>
-          <h1>Tu informacion personal</h1>
+          <h1>Tu perfil, tus datos.l</h1>
         </div>
         <div className="header-actions">
           <p className="header-copy">
-            Completa y actualiza tus datos cuando lo necesites. Solo los atletas con sesion activa
-            pueden acceder a esta pantalla.
+            Mantené tus datos actualizados para personalizar tu experiencia y llevar un mejor registro de tu evolución.
           </p>
           <div className="session-badge">
             <span>{currentUser.name}</span>
@@ -225,8 +224,7 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Datos personales</p>
-              <h2>Resumen rapido</h2>
+              <h2>Tu información</h2>
             </div>
 
             <button
@@ -318,7 +316,7 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
               </div>
 
               <div>
-                <span>Correo electronico</span>
+                <span>Correo electrónico</span>
                 <strong style={{ fontSize: "1.1rem", overflowWrap: "anywhere" }}>
                   {profile?.email ?? currentUser.email}
                 </strong>
@@ -379,8 +377,8 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
 
           <div className="panel-heading" style={{ marginTop: "22px", marginBottom: "14px" }}>
             <div>
-              <p className="eyebrow">Personal records</p>
-              <h2 style={{ fontSize: "1.4rem" }}>Mejores marcas</h2>
+              <p className="eyebrow">Récords personales</p>
+              <h2 style={{ fontSize: "1.4rem" }}>Tus records personales</h2>
             </div>
           </div>
 
@@ -405,7 +403,7 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
               </div>
               <p style={{ margin: "14px 0 0" }}>
                 <a className="back-link" href="#mis-rms" style={{ marginBottom: 0 }}>
-                  Ver todos en Mis RMs
+                  Ver todos mis records
                 </a>
               </p>
             </>
@@ -417,11 +415,11 @@ export function ProfileView({ currentUser }: { currentUser: AuthSession }) {
         <article className="panel" id="mis-rms">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Fuerza</p>
-              <h2>Mis RMs por ejercicio</h2>
+              <p className="eyebrow">Mis marcas</p>
+              <h2>Tus marcas por ejercicio</h2>
             </div>
             <Link className="ghost-button link-button" href="/rms/new">
-              Cargar RM
+              Registrar nueva marca
             </Link>
           </div>
 
