@@ -710,7 +710,9 @@ button {
 }
 
 .preview-block-heading {
-  display: grid;
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
   gap: 10px;
 }
 
@@ -756,7 +758,21 @@ button {
 }
 
 .preview-block-card.is-draft .preview-block-heading {
-  padding-right: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-block-card.is-draft .preview-block-heading-inner {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-block-card.is-draft .add-block-header-btn {
+  flex: 0 0 auto;
 }
 
 /* Boton sticky para guardar el bloque: oculto en desktop, fijo abajo en movil. */
@@ -767,6 +783,10 @@ button {
 @media (max-width: 979px) {
   .add-block-header-btn {
     display: none !important;
+  }
+
+  .preview-block-card.is-draft .add-block-header-btn {
+    display: inline-grid !important;
   }
 
   .add-block-sticky {
@@ -807,7 +827,8 @@ button {
 }
 
 .preview-exercise-row {
-  display: grid;
+  display: flex;
+  justify-content: space-between;
   gap: 10px;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1005,7 +1026,7 @@ button {
 .primary-button,
 .ghost-button,
 .link-button {
-  border-radius: 14px;
+  border-radius: 5px;
   padding: 12px 18px;
   border: 1px solid transparent;
   font-weight: 800;
@@ -1023,8 +1044,8 @@ button {
 .ghost-button,
 .link-button {
   background: transparent;
-  border-color: var(--line);
-  color: var(--text);
+  border-color: rgb(255 214 10 / 50%);
+  color: #ffd60a;
   width: 100%;
   text-align: center;
 }
@@ -1055,8 +1076,8 @@ button {
 }
 
 .icon-button {
-  width: 44px;
-  height: 44px;
+  width: 30px;
+  height: 30px;
   display: inline-grid;
   place-items: center;
   justify-content: center;
