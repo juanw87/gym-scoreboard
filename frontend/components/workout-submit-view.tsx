@@ -569,12 +569,12 @@ async function handleCreateWorkout() {
   const draftBlockLabel = workoutForm.blocks.length + 1;
 
   return (
-    <main className="page-shell">
+    <main className="page-shell workout-submit">
       <Link className="back-link" href="/dashboard">
         Volver al inicio
       </Link>
 
-      {/* <section className="hero-panel">
+      <section className="hero-panel">
         <div>
           <h1>Creá el WOD. Prepará el próximo desafío.</h1>
           <p className="hero-copy">
@@ -589,7 +589,7 @@ async function handleCreateWorkout() {
             Cargar score
           </Link>
         </div>
-      </section> */}
+      </section>
 
       <section className="content-grid submit-grid">
         <div className="workout-builder-layout">
@@ -788,7 +788,7 @@ async function handleCreateWorkout() {
                   </div>
                   <button
                     aria-label="Agregar ejercicio"
-                    className="ghost-button button-with-icon icon-button"
+                    className="add-block-header-btn ghost-button button-with-icon icon-button"
                     onClick={handleAddExercise}
                     title="Agregar ejercicio"
                     type="button"

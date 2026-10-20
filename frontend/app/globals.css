@@ -1026,7 +1026,7 @@ button {
 .primary-button,
 .ghost-button,
 .link-button {
-  border-radius: 5px;
+  border-radius: 14px;
   padding: 12px 18px;
   border: 1px solid transparent;
   font-weight: 800;
@@ -1044,8 +1044,8 @@ button {
 .ghost-button,
 .link-button {
   background: transparent;
-  border-color: rgb(255 214 10 / 50%);
-  color: #ffd60a;
+  border-color: var(--line);
+  color: var(--text);
   width: 100%;
   text-align: center;
 }
@@ -1076,8 +1076,8 @@ button {
 }
 
 .icon-button {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   display: inline-grid;
   place-items: center;
   justify-content: center;
@@ -1088,6 +1088,25 @@ button {
 .icon-button svg {
   display: block;
   margin: 0 auto;
+}
+
+/* Estilos propios de los botones icono (ghost-button + icon-button) de la pantalla de carga de WOD. */
+.workout-submit .ghost-button.icon-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  /* border-color: rgb(255 214 10 / 50%); */
+  /* color: #ffd60a; */
+  border-color: rgba(255, 214, 10, 0.5);
+  background: rgba(255, 214, 10, 0.08);
+  color: #ffffff;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.workout-submit .ghost-button.icon-button:hover {
+  background: rgba(255, 214, 10, 0.18);
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .form-actions {
@@ -1377,6 +1396,8 @@ strong,
     opacity: 1;
     visibility: visible;
   }
+
+  .side-nav-links { grid-template-columns: 1fr; } 
 }
 
 /* Transiciones suaves compartidas para abrir/cerrar el menu. */
