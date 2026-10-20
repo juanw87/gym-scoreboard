@@ -569,7 +569,7 @@ async function handleCreateWorkout() {
   const draftBlockLabel = workoutForm.blocks.length + 1;
 
   return (
-    <main className="page-shell">
+    <main className="page-shell workout-submit">
       <Link className="back-link" href="/dashboard">
         Volver al inicio
       </Link>
@@ -650,7 +650,7 @@ async function handleCreateWorkout() {
                     <span className="card-label">Bloque en edicion</span>
                     <p>Completa el bloque y luego agregalo a la vista previa.</p>
                   </div>
-                  <button
+                  {/* <button
                     aria-label="Agregar bloque"
                     className="ghost-button button-with-icon icon-button add-block-header-btn"
                     onClick={handleAddBlock}
@@ -658,7 +658,7 @@ async function handleCreateWorkout() {
                     type="button"
                   >
                     <FontAwesomeIcon aria-hidden="true" icon={faPlus} />
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="field-grid">
@@ -723,7 +723,7 @@ async function handleCreateWorkout() {
                   </label>
                 </div>
 
-                <div className="form-section-header compact">
+                {/* <div className="form-section-header compact">
                   <div>
                     <span className="card-label">Ejercicios agregados al bloque</span>
                     <p>
@@ -732,9 +732,9 @@ async function handleCreateWorkout() {
                         : "Todavia no agregaste ejercicios a este bloque."}
                     </p>
                   </div>
-                </div>
+                </div> */}
 
-                {currentBlock.exercises.length > 0 ? (
+                {/* {currentBlock.exercises.length > 0 ? (
                   <div className="exercise-list">
                     {currentBlock.exercises.map((exercise, exerciseIndex) => (
                       <div
@@ -771,7 +771,7 @@ async function handleCreateWorkout() {
                       </div>
                     ))}
                   </div>
-                ) : null}
+                ) : null} */}
               </section>
 
               <section className="workout-exercise-card">
@@ -788,7 +788,7 @@ async function handleCreateWorkout() {
                   </div>
                   <button
                     aria-label="Agregar ejercicio"
-                    className="ghost-button button-with-icon icon-button"
+                    className="add-block-header-btn ghost-button button-with-icon icon-button"
                     onClick={handleAddExercise}
                     title="Agregar ejercicio"
                     type="button"
@@ -1006,26 +1006,26 @@ async function handleCreateWorkout() {
                   )}
                 </div>
 
-                </section>
-
                 <div className="add-block-sticky">
                   <button
                     aria-label="Guardar bloque en el WOD"
                     className="primary-button button-with-icon compact"
-                    onClick={handleAddBlock}
+                    onClick={handleAddExercise}
                     title="Guardar bloque en el WOD"
                     type="button"
                   >
                     <FontAwesomeIcon aria-hidden="true" icon={faSave} />
-                    Guardar bloque
+                    Guardar ejercicio
                   </button>
                   <span className="add-block-sticky-hint">
                     <FontAwesomeIcon aria-hidden="true" icon={faCheck} />
                     {currentBlock.exercises.length > 0
                       ? `${currentBlock.exercises.length} ejercicio(s) listos`
-                      : "Agrega ejercicios al bloque"}
+                      : "Agrega ejercicio al bloque"}
                   </span>
-                </div>
+                </div>    
+
+              </section>                
               </div>
             ) : (
               <form className="workout-form" onSubmit={(event) => void handleExtractWorkoutFromPhoto(event)}>
@@ -1102,11 +1102,11 @@ async function handleCreateWorkout() {
                       <div>
                         <span className="card-label">Bloque {blockIndex + 1}</span>
                         <strong>{block.name || `Bloque ${blockIndex + 1}`}</strong>
-                      </div>
-                      <div className="preview-inline-actions">
                         <span className="preview-block-properties">
                           {buildBlockProperties(block) || "Completa las propiedades del bloque"}
                         </span>
+                      </div>
+                      <div className="preview-inline-actions">                        
                         <button
                           aria-label={`Editar bloque ${blockIndex + 1}`}
                           className="ghost-button button-with-icon icon-button"
@@ -1135,15 +1135,15 @@ async function handleCreateWorkout() {
                         <div
                           className="preview-exercise-row"
                           key={`preview-exercise-${blockIndex}-${exerciseIndex}`}
-                        >
-                          <div>
+                        >                        
+                          <div>    
+                             <span className="preview-exercise-properties">
+                              {buildExerciseProperties(exercise, block.type) || "Define objetivo o cargas"}
+                            </span>                        
                             <span className="preview-exercise-index">Ejercicio {exerciseIndex + 1}</span>
                             <strong>{exercise.name || "Ejercicio pendiente"}</strong>
                           </div>
-                          <div className="preview-inline-actions">
-                            <span className="preview-exercise-properties">
-                              {buildExerciseProperties(exercise, block.type) || "Define objetivo o cargas"}
-                            </span>
+                           {/* <div className="preview-inline-actions">                           
                             {workoutInputMode === "manual" ? (
                               <button
                                 aria-label={`Eliminar ejercicio ${exerciseIndex + 1} del bloque ${blockIndex + 1}`}
@@ -1155,7 +1155,7 @@ async function handleCreateWorkout() {
                                 <FontAwesomeIcon aria-hidden="true" icon={faTrash} />
                               </button>
                             ) : null}
-                          </div>
+                          </div> */}
                         </div>
                       ))}
                     </div>
@@ -1165,41 +1165,72 @@ async function handleCreateWorkout() {
                 {workoutInputMode === "manual" ? (
                   <section className="preview-block-card is-draft">
                     <div className="preview-block-heading">
-                      <div>
-                        <span className="card-label">Bloque {draftBlockLabel}</span>
-                        <strong>{currentBlock.name || `Bloque ${draftBlockLabel}`}</strong>
+                      <div className="preview-block-heading-inner">
+                        <div>
+                          <span className="card-label">Bloque {draftBlockLabel}</span>
+                          <strong>{currentBlock.name || `Bloque ${draftBlockLabel}`}</strong>
+                        </div>
+                        <span className="preview-block-properties">
+                          {buildBlockProperties(currentBlock) || "Completa las propiedades del bloque"}
+                        </span>
                       </div>
-                      <span className="preview-block-properties">
-                        {buildBlockProperties(currentBlock) || "Completa las propiedades del bloque"}
-                      </span>
+                      <button
+                        aria-label="Confirmar bloque"
+                        className="ghost-button button-with-icon icon-button add-block-header-btn"
+                        onClick={handleAddBlock}
+                        title="Confirmar bloque"
+                        type="button"
+                      >
+                        <FontAwesomeIcon aria-hidden="true" icon={faCheck} />
+                      </button>
                     </div>
 
                     <div className="preview-exercise-list">
                       {draftBlockExercises.length > 0 ? (
                         draftBlockExercises.map((exercise, exerciseIndex) => (
                           <div className="preview-exercise-row" key={`draft-preview-${exerciseIndex}`}>
-                            <div>
+                            <div className="preview-exercise-content">
                               <span className="preview-exercise-index">
                                 {exerciseIndex < currentBlock.exercises.length
                                   ? `Ejercicio ${exerciseIndex + 1}`
                                   : "Ejercicio en edicion"}
                               </span>
                               <strong>{exercise.name || "Ejercicio pendiente"}</strong>
+                               <span className="preview-exercise-properties">
+                                {buildExerciseProperties(exercise, currentBlock.type) || "Define objetivo o cargas"}
+                              </span>
                             </div>
-                            <span className="preview-exercise-properties">
-                              {buildExerciseProperties(exercise, currentBlock.type) || "Define objetivo o cargas"}
-                            </span>
-                          </div>
+                            <div className="preview-inline-actions">
+                              <button
+                                aria-label="Editar ejercicio"
+                                className="ghost-button button-with-icon icon-button add-block-header-btn"
+                                onClick={handleEditDraftExercise.bind(null, exerciseIndex)}
+                                title="Editar"
+                                type="button"
+                              >
+                                <FontAwesomeIcon aria-hidden="true" icon={faEdit} />
+                              </button>
+                              <button
+                                  aria-label="Eliminar ejercicio"
+                                  className="ghost-button button-with-icon icon-button add-block-header-btn"
+                                  onClick={handleRemoveDraftExercise.bind(null, exerciseIndex)}
+                                  title="Eliminar ejercicio"
+                                  type="button"
+                                >
+                                  <FontAwesomeIcon aria-hidden="true" icon={faTrash} />
+                              </button>
+                            </div>
+                          </div>                          
                         ))
                       ) : (
                         <div className="preview-exercise-row">
                           <div>
                             <span className="preview-exercise-index">Ejercicio en edicion</span>
                             <strong>{currentExercise.name || "Ejercicio pendiente"}</strong>
-                          </div>
-                          <span className="preview-exercise-properties">
-                            {buildExerciseProperties(currentExercise, currentBlock.type) || "Define objetivo o cargas"}
-                          </span>
+                            <span className="preview-exercise-properties">
+                              {buildExerciseProperties(currentExercise, currentBlock.type) || "Define objetivo o cargas"}
+                            </span>
+                          </div>                          
                         </div>
                       )}
                     </div>
