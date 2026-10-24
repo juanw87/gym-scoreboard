@@ -790,7 +790,6 @@ button {
   }
 
   .add-block-sticky {
-    position: sticky;
     bottom: 16px;
     z-index: 50;
     display: grid;
@@ -802,6 +801,7 @@ button {
     background: rgba(17, 17, 17, 0.97);
     box-shadow: var(--shadow);
     justify-content: center;
+    max-width: calc(100% - 32px); 
   }
 
   .add-block-sticky .primary-button {
@@ -998,6 +998,16 @@ button {
 .workout-form input::placeholder,
 .workout-form textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+.workout-form label {
+  min-width: 0;
+}
+
+.workout-form input[type="date"],
+.workout-form input[type="time"],
+.workout-form input[type="datetime-local"] {
+  max-width: 100%;
 }
 
 .scores-section {
