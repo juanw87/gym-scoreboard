@@ -222,15 +222,19 @@ export function WorkoutSubmitView() {
   const [currentBlock, setCurrentBlock] = useState<WorkoutBlockForm>(createEmptyBlock());
   const [currentExercise, setCurrentExercise] = useState<WorkoutExerciseForm>(createEmptyExercise());
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
+  const [editingExerciseIndex, setEditingExerciseIndex] = useState<number | null>(null);
 
   function resetCurrentExercise(nextBlockType: WorkoutBlockType = currentBlock.type) {
     setCurrentExercise(createEmptyExercise(requiresBlockTimeCap(nextBlockType) ? "time_cap" : "reps"));
+    setEditingExerciseIndex(null);
   }
 
   function resetCurrentBlock() {
     const nextBlock = createEmptyBlock();
     setCurrentBlock(nextBlock);
     resetCurrentExercise(nextBlock.type);
+    setEditingBlockIndex(null);
   }
 
   function updateCurrentBlock(updater: (block: WorkoutBlockForm) => WorkoutBlockForm) {
@@ -317,10 +321,24 @@ export function WorkoutSubmitView() {
       return;
     }
 
-    updateCurrentBlock((current) => ({
-      ...current,
-      exercises: [...current.exercises, currentExercise]
-    }));
+    const targetIndex = editingExerciseIndex;
+
+    updateCurrentBlock((current) => {
+      if (targetIndex === null) {
+        return {
+          ...current,
+          exercises: [...current.exercises, currentExercise]
+        };
+      }
+
+      const nextExercises = [...current.exercises];
+      nextExercises.splice(targetIndex, 0, currentExercise);
+
+      return {
+        ...current,
+        exercises: nextExercises
+      };
+    });
 
     resetCurrentExercise();
   }
@@ -339,6 +357,7 @@ export function WorkoutSubmitView() {
       return;
     }
 
+    setEditingExerciseIndex(exerciseIndex);
     setCurrentExercise(cloneExercise(exerciseToEdit));
     updateCurrentBlock((current) => ({
       ...current,
@@ -358,10 +377,24 @@ export function WorkoutSubmitView() {
       return;
     }
 
-    setWorkoutForm((current) => ({
-      ...current,
-      blocks: [...current.blocks, currentBlock]
-    }));
+    const targetIndex = editingBlockIndex;
+
+    setWorkoutForm((current) => {
+      if (targetIndex === null) {
+        return {
+          ...current,
+          blocks: [...current.blocks, currentBlock]
+        };
+      }
+
+      const nextBlocks = [...current.blocks];
+      nextBlocks.splice(targetIndex, 0, currentBlock);
+
+      return {
+        ...current,
+        blocks: nextBlocks
+      };
+    });
 
     setWorkoutError(null);
     resetCurrentBlock();
@@ -382,6 +415,7 @@ export function WorkoutSubmitView() {
       return;
     }
 
+    setEditingBlockIndex(blockIndex);
     setCurrentBlock(cloneBlock(blockToEdit));
     resetCurrentExercise(blockToEdit.type);
     setWorkoutForm((current) => ({
@@ -466,7 +500,13 @@ async function handleCreateWorkout() {
     setWorkoutError(null);
 
     const allBlocks = workoutForm.blocks.length > 0
-      ? workoutForm.blocks
+      ? editingBlockIndex === null
+        ? workoutForm.blocks
+        : (() => {
+            const nextBlocks = [...workoutForm.blocks];
+            nextBlocks.splice(editingBlockIndex, 0, currentBlock);
+            return nextBlocks;
+          })()
       : [currentBlock];
 
     const payload: NewWorkoutPayload = {
