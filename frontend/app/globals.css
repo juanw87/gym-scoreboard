@@ -613,6 +613,7 @@ button {
 
 .workout-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
 
@@ -1000,14 +1001,16 @@ button {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.workout-form label {
+.workout-form > label {
   min-width: 0;
 }
 
-.workout-form input[type="date"],
-.workout-form input[type="time"],
-.workout-form input[type="datetime-local"] {
+.workout-form > label input[type="date"],
+.workout-form > label input[type="time"],
+.workout-form > label input[type="datetime-local"] {
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .scores-section {
