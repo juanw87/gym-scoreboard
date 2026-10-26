@@ -1,5 +1,5 @@
 import { PoolClient } from "pg";
-import { withTransaction } from "../db";
+import { query, withTransaction } from "../db";
 import { HttpError } from "../errors";
 import {
   findPreviousBestScore,
@@ -7,11 +7,23 @@ import {
   findWorkoutById,
   insertScore,
   insertWorkout,
+  isAthleteSubscribed,
   listScoresByWorkout,
+  subscribeAthleteToWorkout,
+  unsubscribeAthleteFromWorkout,
   updateScore,
   updateScoreRanking
 } from "../repositories/workout-repository";
 import { CreateWorkoutInput, SubmitWorkoutScoreInput } from "../validation";
+
+type SubscribedWorkoutRow = {
+  id: number;
+  title: string;
+  description: string;
+  workout_date: string;
+  workout_type: string;
+  score_count: string;
+};
 
 function deriveWorkoutType(blocks: CreateWorkoutInput["blocks"]) {
   const [firstBlock] = blocks;
@@ -102,6 +114,21 @@ async function recalculateWorkoutRanking(
   return sortedScores.length;
 }
 
+async function verifyAthleteSubscribed(
+  client: PoolClient,
+  athleteId: number,
+  workoutId: number
+) {
+  const isSubscribed = await isAthleteSubscribed(client, athleteId, workoutId);
+
+  if (!isSubscribed) {
+    throw new HttpError(
+      403,
+      "No estás suscrito a este WOD. Suscribite antes de cargar tu resultado."
+    );
+  }
+}
+
 export async function createWorkout(input: CreateWorkoutInput) {
   return withTransaction(async (client) => {
     const workoutType = deriveWorkoutType(input.blocks);
@@ -155,6 +182,8 @@ export async function submitWorkoutScore(
       throw new HttpError(404, "El WOD seleccionado no existe.");
     }
 
+    await verifyAthleteSubscribed(client, athleteId, workoutId);
+
     const existingScore = await findScoreByWorkoutAndAthlete(client, {
       workoutId,
       athleteId
@@ -193,4 +222,89 @@ export async function submitWorkoutScore(
       action: existingScore ? "updated" : "created"
     };
   });
+}
+
+export async function getSubscribedWorkouts(athleteId: number) {
+  const result = await query<SubscribedWorkoutRow>(
+    `
+      SELECT
+        w.id,
+        w.title,
+        w.description,
+        TO_CHAR(w.workout_date, 'YYYY-MM-DD') AS workout_date,
+        w.workout_type,
+        COUNT(s.id)::text AS score_count
+      FROM workouts w
+      INNER JOIN workout_subscriptions ws ON ws.workout_id = w.id
+      LEFT JOIN scores s ON s.workout_id = w.id
+      WHERE ws.athlete_id = $1
+      GROUP BY w.id
+      ORDER BY w.workout_date DESC, w.id DESC
+    `,
+    [athleteId]
+  );
+
+  return result.rows.map((workout) => ({
+    id: workout.id,
+    title: workout.title,
+    description: workout.description,
+    workoutDate: workout.workout_date,
+    workoutType: workout.workout_type,
+    scoreCount: Number(workout.score_count)
+  }));
+}
+
+export async function subscribeToWorkout(athleteId: number, workoutId: number) {
+  return withTransaction(async (client) => {
+    const workout = await findWorkoutById(client, workoutId);
+
+    if (!workout) {
+      throw new HttpError(404, "El WOD seleccionado no existe.");
+    }
+
+    await subscribeAthleteToWorkout(client, { athleteId, workoutId });
+
+    return {
+      workoutId: workout.id,
+      title: workout.title,
+      workoutType: workout.workout_type
+    };
+  });
+}
+
+export async function unsubscribeFromWorkout(athleteId: number, workoutId: number) {
+  return withTransaction(async (client) => {
+    await unsubscribeAthleteFromWorkout(client, { athleteId, workoutId });
+
+    return { workoutId };
+  });
+}
+
+export async function listWorkouts(limit = 50) {
+  const result = await query<SubscribedWorkoutRow>(
+    `
+      SELECT
+        w.id,
+        w.title,
+        w.description,
+        TO_CHAR(w.workout_date, 'YYYY-MM-DD') AS workout_date,
+        w.workout_type,
+        COUNT(s.id)::text AS score_count
+      FROM workouts w
+      LEFT JOIN scores s ON s.workout_id = w.id
+      GROUP BY w.id
+      ORDER BY w.workout_date DESC, w.id DESC
+      LIMIT $1
+    `,
+    [limit]
+  );
+
+  return result.rows.map((workout) => ({
+    id: workout.id,
+    title: workout.title,
+    description: workout.description,
+    workoutDate: workout.workout_date,
+    workoutType: workout.workout_type,
+    scoreCount: Number(workout.score_count)
+  }));
 }

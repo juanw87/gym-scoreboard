@@ -1155,6 +1155,10 @@ button {
   text-align: right;
 }
 
+.history-meta button {
+  white-space: nowrap;
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 16px;

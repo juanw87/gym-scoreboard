@@ -194,3 +194,70 @@ export async function updateScoreRanking(
     [input.scoreId, input.rank, input.isPersonalRecord]
   );
 }
+
+export async function findSubscriptionsByAthlete(
+  client: PoolClient,
+  athleteId: number
+) {
+  const result = await client.query<{ workout_id: number }>(
+    `
+      SELECT workout_id
+      FROM workout_subscriptions
+      WHERE athlete_id = $1
+    `,
+    [athleteId]
+  );
+
+  return result.rows.map((row) => row.workout_id);
+}
+
+export async function isAthleteSubscribed(
+  client: PoolClient,
+  athleteId: number,
+  workoutId: number
+) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM workout_subscriptions
+      WHERE athlete_id = $1 AND workout_id = $2
+      LIMIT 1
+    `,
+    [athleteId, workoutId]
+  );
+
+  return result.rowCount !== null && result.rowCount > 0;
+}
+
+export async function subscribeAthleteToWorkout(
+  client: PoolClient,
+  input: {
+    athleteId: number;
+    workoutId: number;
+  }
+) {
+  await client.query(
+    `
+      INSERT INTO workout_subscriptions (athlete_id, workout_id)
+      VALUES ($1, $2)
+      ON CONFLICT (athlete_id, workout_id) DO NOTHING
+    `,
+    [input.athleteId, input.workoutId]
+  );
+}
+
+export async function unsubscribeAthleteFromWorkout(
+  client: PoolClient,
+  input: {
+    athleteId: number;
+    workoutId: number;
+  }
+) {
+  await client.query(
+    `
+      DELETE FROM workout_subscriptions
+      WHERE athlete_id = $1 AND workout_id = $2
+    `,
+    [input.athleteId, input.workoutId]
+  );
+}

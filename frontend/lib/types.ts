@@ -198,3 +198,21 @@ export type CreateRmRecordPayload = {
   rmValue: number;
   rmDate: string;
 };
+
+export type SubscribedWorkout = {
+  id: number;
+  title: string;
+  description: string;
+  workoutDate: string;
+  workoutType: string;
+  workoutTypeLabel: string;
+  scoreCount: number;
+};
+
+export type SubscribedWorkoutsResponse = {
+  subscribedWorkouts: SubscribedWorkout[];
+};
+
+export type WorkoutsResponse = {
+  workouts: SubscribedWorkout[];
+};

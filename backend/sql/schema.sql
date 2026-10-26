@@ -79,3 +79,11 @@ CREATE INDEX IF NOT EXISTS idx_rm_records_athlete_id ON rm_records(athlete_id);
 CREATE INDEX IF NOT EXISTS idx_rm_records_athlete_exercise ON rm_records(athlete_id, exercise_name);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rm_records_unique_per_date
   ON rm_records (athlete_id, exercise_name, rm_date);
+
+CREATE TABLE IF NOT EXISTS workout_subscriptions (
+  id SERIAL PRIMARY KEY,
+  athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+  workout_id INTEGER NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
+  subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (athlete_id, workout_id)
+);
